@@ -17,7 +17,7 @@ from PyQt6.QtWidgets import (
 )
 
 from src.models.channel import Channel
-from src.parser.m3u import parse_m3u_file, parse_m3u_url
+from src.parser.m3u import fetch_best_playlist, parse_m3u_file
 from src.ui.app_settings import AppSettings
 from src.ui.channel_list import ChannelListPanel
 from src.ui.control_bar import ControlBarWidget
@@ -36,7 +36,7 @@ class PlaylistFetchWorker(QThread):
 
     def run(self) -> None:
         try:
-            channels = parse_m3u_url(self._url)
+            channels = fetch_best_playlist(self._url)
             self.fetched.emit(channels)
         except Exception as e:
             self.error.emit(str(e))

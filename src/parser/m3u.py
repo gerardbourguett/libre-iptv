@@ -2,6 +2,7 @@ import logging
 import re
 import urllib.request
 from pathlib import Path
+from urllib.parse import parse_qs, urlencode, urlparse, urlunparse
 
 from src.models.channel import Channel
 
@@ -54,6 +55,52 @@ def parse_m3u(content: str) -> list[Channel]:
             )
         )
         i = j + 1
+
+    return channels
+
+
+def _derive_m3u_plus_url(url: str) -> str | None:
+    """Return an m3u_plus variant of *url*, or None if not applicable."""
+    parsed = urlparse(url)
+
+    # Pattern 1: path ends with /m3u
+    if parsed.path.endswith("/m3u"):
+        new_path = parsed.path[:-4] + "/m3u_plus"
+        return urlunparse(parsed._replace(path=new_path))
+
+    # Pattern 2: query param type=m3u (Xtream-Codes /get.php style)
+    qs = parse_qs(parsed.query, keep_blank_values=True)
+    if qs.get("type") == ["m3u"]:
+        qs["type"] = ["m3u_plus"]
+        new_query = urlencode(qs, doseq=True)
+        return urlunparse(parsed._replace(query=new_query))
+
+    return None
+
+
+def fetch_best_playlist(url: str) -> list[Channel]:
+    """Fetch an M3U playlist, auto-upgrading to m3u_plus if groups are missing."""
+    channels = parse_m3u_url(url)
+
+    if not channels:
+        return channels
+
+    with_group = sum(1 for c in channels if c.group)
+    if with_group / len(channels) > 0.10:
+        return channels
+
+    plus_url = _derive_m3u_plus_url(url)
+    if plus_url is None:
+        return channels
+
+    try:
+        plus_channels = parse_m3u_url(plus_url)
+        plus_with_group = sum(1 for c in plus_channels if c.group)
+        if plus_with_group > with_group:
+            logger.info("Auto-upgraded playlist to m3u_plus: %s", plus_url)
+            return plus_channels
+    except Exception as exc:
+        logger.warning("m3u_plus upgrade failed (%s), using original", exc)
 
     return channels
 

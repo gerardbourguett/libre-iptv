@@ -135,6 +135,81 @@ class TestParseM3uUrl:
                 parse_m3u_url("http://bad.example.com/playlist.m3u")
 
 
+class TestDeriveM3uPlusUrl:
+    def test_path_ending_with_m3u_becomes_m3u_plus(self):
+        from src.parser.m3u import _derive_m3u_plus_url
+        url = "https://server.com/playlist/user/pass/m3u"
+        assert _derive_m3u_plus_url(url) == "https://server.com/playlist/user/pass/m3u_plus"
+
+    def test_path_with_query_string_preserved(self):
+        from src.parser.m3u import _derive_m3u_plus_url
+        url = "https://server.com/playlist/user/pass/m3u?output=hls"
+        result = _derive_m3u_plus_url(url)
+        assert result is not None
+        assert "/m3u_plus" in result
+
+    def test_type_m3u_query_param_upgraded(self):
+        from src.parser.m3u import _derive_m3u_plus_url
+        url = "https://server.com/get.php?username=X&password=Y&type=m3u"
+        result = _derive_m3u_plus_url(url)
+        assert result is not None
+        assert "type=m3u_plus" in result
+
+    def test_already_m3u_plus_returns_none(self):
+        from src.parser.m3u import _derive_m3u_plus_url
+        assert _derive_m3u_plus_url("https://server.com/playlist/u/p/m3u_plus") is None
+
+    def test_unrecognized_pattern_returns_none(self):
+        from src.parser.m3u import _derive_m3u_plus_url
+        assert _derive_m3u_plus_url("https://server.com/playlist.m3u") is None
+
+
+class TestFetchBestPlaylist:
+    def _resp(self, content: str):
+        mock = MagicMock()
+        mock.read.return_value = content.encode("utf-8")
+        mock.__enter__ = lambda s: s
+        mock.__exit__ = MagicMock(return_value=False)
+        return mock
+
+    def test_returns_original_when_groups_already_present(self):
+        """If original URL already has groups, no upgrade is attempted."""
+        content = '#EXTM3U\n#EXTINF:-1 group-title="News",CNN\nhttp://cnn.com\n'
+        with patch("urllib.request.urlopen", return_value=self._resp(content)) as mo:
+            from src.parser.m3u import fetch_best_playlist
+            channels = fetch_best_playlist("https://server.com/playlist/u/p/m3u")
+        assert channels[0].group == "News"
+        assert mo.call_count == 1  # Only one request made
+
+    def test_auto_upgrades_to_m3u_plus_when_no_groups(self):
+        """If original has no groups, silently retries with m3u_plus."""
+        plain = "#EXTM3U\n#EXTINF:-1,TVN\nhttp://tvn.com\n"
+        plus = '#EXTM3U\n#EXTINF:-1 group-title="NACIONALES",TVN\nhttp://tvn.com\n'
+        with patch("urllib.request.urlopen", side_effect=[self._resp(plain), self._resp(plus)]):
+            from src.parser.m3u import fetch_best_playlist
+            channels = fetch_best_playlist("https://server.com/playlist/u/p/m3u")
+        assert channels[0].group == "NACIONALES"
+
+    def test_falls_back_to_original_when_plus_fails(self):
+        """If m3u_plus request raises, original channels are returned silently."""
+        plain = "#EXTM3U\n#EXTINF:-1,TVN\nhttp://tvn.com\n"
+        with patch("urllib.request.urlopen",
+                   side_effect=[self._resp(plain), OSError("404")]):
+            from src.parser.m3u import fetch_best_playlist
+            channels = fetch_best_playlist("https://server.com/playlist/u/p/m3u")
+        assert len(channels) == 1
+        assert channels[0].name == "TVN"
+
+    def test_no_upgrade_when_url_has_no_m3u_pattern(self):
+        """Unrecognized URL with no groups: original returned, no second request."""
+        plain = "#EXTM3U\n#EXTINF:-1,TVN\nhttp://tvn.com\n"
+        with patch("urllib.request.urlopen", return_value=self._resp(plain)) as mo:
+            from src.parser.m3u import fetch_best_playlist
+            channels = fetch_best_playlist("https://server.com/playlist.m3u")
+        assert len(channels) == 1
+        assert mo.call_count == 1
+
+
 class TestParseM3uFile:
     def test_valid_file(self) -> None:
         """S1: Parse existing valid M3U file."""
