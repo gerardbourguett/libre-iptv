@@ -57,9 +57,8 @@ class TestPlayerWidget:
 class TestPlayerWidgetSignals:
     def test_clicked_signal_emitted_on_mouse_press(self, widget, qtbot, mock_vlc):
         """Clicking the player widget emits the clicked signal."""
-        from PyQt6.QtCore import Qt
-        from PyQt6.QtGui import QMouseEvent
-        from PyQt6.QtCore import QPoint, QPointF
+        from PyQt6.QtCore import QPointF, Qt  # noqa: E402
+        from PyQt6.QtGui import QMouseEvent  # noqa: E402
 
         with qtbot.waitSignal(widget.clicked, timeout=1000):
             event = QMouseEvent(

@@ -95,7 +95,7 @@ class ChannelListWidget(QListWidget):
         for header_idx, has_visible in header_has_visible.items():
             hdr = self.item(header_idx)
             assert hdr is not None
-            hdr.setHidden(not has_visible)
+            hdr.setHidden(q != "" and not has_visible)
 
     def filter_channels(self, text: str) -> None:
         self._current_query = text

@@ -159,11 +159,12 @@ class TestCollapsibleGroups:
         assert "▼ News (2)" in header.text()
 
     def test_click_header_collapses_group(self, news_widget):
-        """Clicking an expanded header hides its channels and flips arrow to ▶."""
+        """Clicking an expanded header hides channels but keeps the header visible."""
         header = news_widget.item(0)
         news_widget.itemClicked.emit(header)
         assert "▶" in header.text()
         assert news_widget.item(1).isHidden()
+        assert not header.isHidden()  # header must remain visible to allow re-expansion
 
     def test_click_collapsed_header_expands(self, news_widget):
         """Clicking a collapsed header shows its channels and flips arrow to ▼."""

@@ -97,7 +97,8 @@ class TestParseM3uUrl:
         """parse_m3u_url must include a User-Agent header to avoid 403s."""
         from urllib.request import Request
         m3u = "#EXTM3U\n#EXTINF:-1,Test\nhttp://test\n"
-        with patch("urllib.request.urlopen", return_value=self._mock_response(m3u)) as mock_open:
+        mock_resp = self._mock_response(m3u)
+        with patch("urllib.request.urlopen", return_value=mock_resp) as mock_open:
             from src.parser.m3u import parse_m3u_url
             parse_m3u_url("http://example.com/playlist.m3u")
         request = mock_open.call_args[0][0]
@@ -107,7 +108,8 @@ class TestParseM3uUrl:
     def test_parse_m3u_url_uses_timeout(self):
         """parse_m3u_url must pass a timeout to urlopen."""
         m3u = "#EXTM3U\n#EXTINF:-1,Test\nhttp://test\n"
-        with patch("urllib.request.urlopen", return_value=self._mock_response(m3u)) as mock_open:
+        mock_resp = self._mock_response(m3u)
+        with patch("urllib.request.urlopen", return_value=mock_resp) as mock_open:
             from src.parser.m3u import parse_m3u_url
             parse_m3u_url("http://example.com/playlist.m3u")
         call_kwargs = mock_open.call_args[1]
@@ -185,7 +187,8 @@ class TestFetchBestPlaylist:
         """If original has no groups, silently retries with m3u_plus."""
         plain = "#EXTM3U\n#EXTINF:-1,TVN\nhttp://tvn.com\n"
         plus = '#EXTM3U\n#EXTINF:-1 group-title="NACIONALES",TVN\nhttp://tvn.com\n'
-        with patch("urllib.request.urlopen", side_effect=[self._resp(plain), self._resp(plus)]):
+        side = [self._resp(plain), self._resp(plus)]
+        with patch("urllib.request.urlopen", side_effect=side):
             from src.parser.m3u import fetch_best_playlist
             channels = fetch_best_playlist("https://server.com/playlist/u/p/m3u")
         assert channels[0].group == "NACIONALES"
