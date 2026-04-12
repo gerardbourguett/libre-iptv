@@ -203,7 +203,7 @@ class ProfileChooserDialog(QDialog):
         layout.setContentsMargins(32, 32, 32, 32)
         layout.setSpacing(16)
 
-        title = QLabel("¿Quién sos?")
+        title = QLabel("¿Quién eres?")
         title.setStyleSheet("font-size: 22px; font-weight: bold; color: #e0e0e0;")
         title.setAlignment(Qt.AlignmentFlag.AlignCenter)
         layout.addWidget(title)
@@ -245,7 +245,7 @@ class ProfileChooserDialog(QDialog):
         title.setAlignment(Qt.AlignmentFlag.AlignCenter)
         layout.addWidget(title)
 
-        sub = QLabel("Creá tu primer perfil para comenzar.")
+        sub = QLabel("Crea tu primer perfil para comenzar.")
         sub.setStyleSheet("color: #888; font-size: 13px;")
         sub.setAlignment(Qt.AlignmentFlag.AlignCenter)
         layout.addWidget(sub)

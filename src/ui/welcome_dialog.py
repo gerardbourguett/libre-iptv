@@ -133,7 +133,7 @@ class WelcomeDialog(QDialog):
         title.setAlignment(Qt.AlignmentFlag.AlignCenter)
         layout.addWidget(title)
 
-        subtitle = QLabel("Creá tu primer perfil para comenzar.")
+        subtitle = QLabel("Crea tu primer perfil para comenzar.")
         subtitle.setStyleSheet("color: #888888; font-size: 13px;")
         subtitle.setAlignment(Qt.AlignmentFlag.AlignCenter)
         layout.addWidget(subtitle)
