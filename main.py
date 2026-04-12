@@ -3,7 +3,9 @@ import sys
 from PyQt6.QtGui import QColor, QFont, QPalette
 from PyQt6.QtWidgets import QApplication
 
+from src.profiles.manager import ProfileManager
 from src.ui.main_window import MainWindow
+from src.ui.welcome_dialog import WelcomeDialog
 
 
 def configure_app(app: QApplication) -> None:
@@ -34,7 +36,16 @@ def main() -> None:
     app.setOrganizationName("iptv")
     app.setApplicationName("iptv-player")
     configure_app(app)
-    window = MainWindow()
+
+    manager = ProfileManager()
+
+    if manager.needs_welcome():
+        dialog = WelcomeDialog()
+        dialog.exec()
+        name = dialog.selected_name or "Mi Perfil"
+        manager.create_profile(name, dialog.selected_color)
+
+    window = MainWindow(manager)
     window.show()
     sys.exit(app.exec())
 

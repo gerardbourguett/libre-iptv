@@ -18,10 +18,12 @@ from PyQt6.QtWidgets import (
 
 from src.models.channel import Channel
 from src.parser.m3u import fetch_best_playlist, parse_m3u_file
+from src.profiles.manager import ProfileManager
 from src.ui.app_settings import AppSettings
 from src.ui.channel_list import ChannelListPanel
 from src.ui.control_bar import ControlBarWidget
 from src.ui.grid_player_widget import GridPlayerWidget
+from src.ui.profile_bar import ProfileSelectorBar
 
 _DEFAULT_LEFT_WIDTH = 280
 
@@ -43,8 +45,13 @@ class PlaylistFetchWorker(QThread):
 
 
 class MainWindow(QMainWindow):
-    def __init__(self, parent: QWidget | None = None) -> None:
+    def __init__(
+        self,
+        manager: ProfileManager | None = None,
+        parent: QWidget | None = None,
+    ) -> None:
         super().__init__(parent)
+        self._manager = manager
         self.setWindowTitle("IPTV Player")
         self.setMinimumSize(900, 600)
 
@@ -54,6 +61,16 @@ class MainWindow(QMainWindow):
         self._control_bar = ControlBarWidget()
         self._fetch_worker: PlaylistFetchWorker | None = None
 
+        # Left panel: profile bar (if manager) + channel list
+        left_panel = QWidget()
+        left_layout = QVBoxLayout(left_panel)
+        left_layout.setContentsMargins(0, 0, 0, 0)
+        left_layout.setSpacing(0)
+        if manager is not None:
+            self._profile_bar = ProfileSelectorBar(manager)
+            left_layout.addWidget(self._profile_bar)
+        left_layout.addWidget(self._channel_list_panel)
+
         right_container = QWidget()
         right_layout = QVBoxLayout(right_container)
         right_layout.setContentsMargins(0, 0, 0, 0)
@@ -62,7 +79,7 @@ class MainWindow(QMainWindow):
         right_layout.addWidget(self._control_bar)
 
         splitter = QSplitter(Qt.Orientation.Horizontal)
-        splitter.addWidget(self._channel_list_panel)
+        splitter.addWidget(left_panel)
         splitter.addWidget(right_container)
         splitter.setSizes([_DEFAULT_LEFT_WIDTH, 620])
         splitter.setHandleWidth(2)
@@ -145,6 +162,8 @@ class MainWindow(QMainWindow):
     def closeEvent(self, event: QCloseEvent | None) -> None:
         self._settings.save_geometry(self.saveGeometry())
         self._settings.save_splitter(self._splitter.sizes())
+        if self._manager is not None:
+            self._manager.save_active()
         super().closeEvent(event)
 
     def _build_menus(self, menu_bar: QMenuBar) -> None:
@@ -214,6 +233,9 @@ class MainWindow(QMainWindow):
 
     def _on_channel_selected(self, channel: Channel) -> None:
         self._grid.play_in_active(channel.url)
+        if self._manager is not None:
+            self._manager.add_to_recent(channel.url)
+            self._manager.save_active()
         status_bar = self.statusBar()
         assert status_bar is not None
         status_bar.showMessage(channel.name)

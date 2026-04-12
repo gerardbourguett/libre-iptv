@@ -203,6 +203,78 @@ class TestCollapsibleGroups:
         assert not news_widget.item(1).isHidden()
 
 
+class TestFavoritesAndRecentGroups:
+    @pytest.fixture
+    def channels(self):
+        return [
+            Channel(url="http://cnn.com", name="CNN", group="News"),
+            Channel(url="http://bbc.com", name="BBC", group="News"),
+            Channel(url="http://espn.com", name="ESPN", group="Sports"),
+        ]
+
+    def test_favorites_group_appears_at_top(self, widget, channels):
+        widget.load_channels(channels, favorites=["http://espn.com"])
+        header = widget.item(0)
+        assert header is not None
+        assert "Favorites" in header.text() or "⭐" in header.text()
+
+    def test_favorites_group_before_normal_groups(self, widget, channels):
+        widget.load_channels(channels, favorites=["http://cnn.com"])
+        fav_header = widget.item(0)
+        assert fav_header is not None
+        # second item should be CNN (the favorite)
+        fav_channel = widget.item(1)
+        assert fav_channel is not None
+        from src.models.channel import Channel as Ch
+        stored = fav_channel.data(Qt.ItemDataRole.UserRole)
+        assert isinstance(stored, Ch)
+        assert stored.url == "http://cnn.com"
+
+    def test_recent_group_appears_before_normal_groups(self, widget, channels):
+        widget.load_channels(channels, recent=["http://bbc.com"])
+        header = widget.item(0)
+        assert header is not None
+        assert "Recent" in header.text() or "🕐" in header.text()
+
+    def test_favorites_before_recent_before_groups(self, widget, channels):
+        widget.load_channels(
+            channels,
+            favorites=["http://cnn.com"],
+            recent=["http://espn.com"],
+        )
+        item0 = widget.item(0)
+        item2 = widget.item(2)
+        assert item0 is not None and item2 is not None
+        assert "Favorites" in item0.text() or "⭐" in item0.text()
+        assert "Recent" in item2.text() or "🕐" in item2.text()
+
+    def test_favorites_header_not_collapsible(self, widget, channels):
+        widget.load_channels(channels, favorites=["http://cnn.com"])
+        header = widget.item(0)
+        assert header is not None
+        assert not (header.flags() & Qt.ItemFlag.ItemIsSelectable)
+        # clicking it should NOT collapse (no ▶ arrow)
+        widget.itemClicked.emit(header)
+        assert "▶" not in header.text()
+
+    def test_no_favorites_group_when_empty(self, widget, channels):
+        widget.load_channels(channels, favorites=[])
+        header = widget.item(0)
+        assert header is not None
+        assert "⭐" not in header.text()
+
+    def test_no_recent_group_when_none(self, widget, channels):
+        widget.load_channels(channels)
+        header = widget.item(0)
+        assert header is not None
+        assert "🕐" not in header.text()
+
+    def test_existing_tests_unaffected_without_params(self, widget, channels):
+        """load_channels() with no favorites/recent behaves as before."""
+        widget.load_channels(channels)
+        assert widget.count() == 5  # News header + CNN + BBC + Sports header + ESPN
+
+
 class TestChannelListStyling:
     def test_widget_has_stylesheet(self, widget):
         """ChannelListWidget applies a stylesheet."""

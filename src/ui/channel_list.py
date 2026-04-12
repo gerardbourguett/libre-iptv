@@ -19,6 +19,7 @@ _UNCATEGORIZED = "Uncategorized"
 class _GroupHeader:
     name: str
     count: int
+    pinned: bool = False  # True = Favorites / Recent (non-collapsible)
 
 
 class ChannelListWidget(QListWidget):
@@ -36,10 +37,35 @@ class ChannelListWidget(QListWidget):
         )
         self.itemClicked.connect(self._on_item_clicked)
 
-    def load_channels(self, channels: list[Channel]) -> None:
+    def load_channels(
+        self,
+        channels: list[Channel],
+        favorites: list[str] | None = None,
+        recent: list[str] | None = None,
+    ) -> None:
         self.clear()
         self._collapsed_groups.clear()
         self._current_query = ""
+
+        url_to_channel: dict[str, Channel] = {ch.url: ch for ch in channels}
+
+        # Pinned group: Favorites
+        if favorites:
+            self._add_pinned_header("⭐ Favorites", len(favorites))
+            for url in favorites:
+                ch = url_to_channel.get(url)
+                if ch is not None:
+                    self._add_channel(ch)
+
+        # Pinned group: Recent
+        if recent:
+            self._add_pinned_header("🕐 Recent", len(recent))
+            for url in recent:
+                ch = url_to_channel.get(url)
+                if ch is not None:
+                    self._add_channel(ch)
+
+        # Normal groups
         groups: dict[str, list[Channel]] = {}
         for ch in channels:
             key = ch.group if ch.group else _UNCATEGORIZED
@@ -49,6 +75,20 @@ class ChannelListWidget(QListWidget):
             self._add_header(group_name, len(group_channels))
             for ch in group_channels:
                 self._add_channel(ch)
+
+    def _add_pinned_header(self, text: str, count: int) -> None:
+        item = QListWidgetItem(f"{text} ({count})")
+        item.setFlags(Qt.ItemFlag.NoItemFlags)
+        font = QFont()
+        font.setBold(True)
+        item.setFont(font)
+        item.setForeground(QColor("#9e9e9e"))
+        item.setBackground(QColor("#0d0d0d"))
+        item.setData(
+            Qt.ItemDataRole.UserRole,
+            _GroupHeader(name=text, count=count, pinned=True),
+        )
+        self.addItem(item)
 
     def _add_header(self, text: str, count: int) -> None:
         item = QListWidgetItem(f"▼ {text} ({count})")
@@ -105,7 +145,7 @@ class ChannelListWidget(QListWidget):
         data = item.data(Qt.ItemDataRole.UserRole)
         if isinstance(data, Channel):
             self.channel_selected.emit(data)
-        elif isinstance(data, _GroupHeader):
+        elif isinstance(data, _GroupHeader) and not data.pinned:
             group_name = data.name
             if group_name in self._collapsed_groups:
                 self._collapsed_groups.discard(group_name)
