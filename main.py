@@ -5,7 +5,7 @@ from PyQt6.QtWidgets import QApplication
 
 from src.profiles.manager import ProfileManager
 from src.ui.main_window import MainWindow
-from src.ui.welcome_dialog import WelcomeDialog
+from src.ui.profile_chooser import ProfileChooserDialog
 
 
 def configure_app(app: QApplication) -> None:
@@ -39,11 +39,8 @@ def main() -> None:
 
     manager = ProfileManager()
 
-    if manager.needs_welcome():
-        dialog = WelcomeDialog()
-        dialog.exec()
-        name = dialog.selected_name or "Mi Perfil"
-        manager.create_profile(name, dialog.selected_color)
+    chooser = ProfileChooserDialog(manager)
+    chooser.exec()
 
     window = MainWindow(manager)
     window.show()

@@ -240,9 +240,27 @@ class MainWindow(QMainWindow):
     def _toggle_fullscreen(self) -> None:
         if self._fullscreen:
             self._fullscreen = False
+            # Restore all hidden panels
+            for toolbar in self.findChildren(QToolBar):
+                toolbar.show()
+            sb = self.statusBar()
+            if sb:
+                sb.show()
+            panel = self._splitter.widget(0)
+            if panel:
+                panel.show()
             self.showNormal()
         else:
             self._fullscreen = True
+            # Hide everything except the video grid
+            for toolbar in self.findChildren(QToolBar):
+                toolbar.hide()
+            sb = self.statusBar()
+            if sb:
+                sb.hide()
+            panel = self._splitter.widget(0)
+            if panel:
+                panel.hide()
             self.showFullScreen()
 
     def _build_menus(self, menu_bar: QMenuBar) -> None:
@@ -275,7 +293,11 @@ class MainWindow(QMainWindow):
         if not path:
             return
         channels = parse_m3u_file(Path(path))
-        self._channel_list.load_channels(channels)
+        self._channels = channels
+        self._reload_channel_list()
+        if self._manager is not None:
+            self._manager.update_playlist(path=path)
+            self._manager.save_active()
         status_bar = self.statusBar()
         assert status_bar is not None
         status_bar.showMessage(f"{len(channels)} channels loaded")
@@ -285,6 +307,9 @@ class MainWindow(QMainWindow):
         url, ok = QInputDialog.getText(self, "Open URL", "Enter M3U URL:")
         if not ok or not url.strip():
             return
+        if self._manager is not None:
+            self._manager.update_playlist(url=url.strip())
+            self._manager.save_active()
         status_bar = self.statusBar()
         assert status_bar is not None
         status_bar.showMessage("Fetching...")

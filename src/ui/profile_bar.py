@@ -1,10 +1,17 @@
 from PyQt6.QtCore import Qt, pyqtSignal
 from PyQt6.QtGui import QColor, QFont, QPainter
 from PyQt6.QtWidgets import (
+    QDialog,
+    QDialogButtonBox,
     QHBoxLayout,
+    QLabel,
+    QLineEdit,
     QMenu,
+    QMessageBox,
+    QPushButton,
     QSizePolicy,
     QToolButton,
+    QVBoxLayout,
     QWidget,
 )
 
@@ -83,6 +90,184 @@ class _NameButton(QToolButton):
         self.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Fixed)
 
 
+_DIALOG_STYLE = (
+    "QDialog { background: #0d0d0d; }"
+    "QLabel { color: #e0e0e0; }"
+    "QLineEdit { background: #1e1e1e; color: #e0e0e0; border: 1px solid #2a2a2a;"
+    " border-radius: 6px; padding: 8px 12px; font-size: 13px; }"
+    "QLineEdit:focus { border-color: #00bcd4; }"
+    "QDialogButtonBox QPushButton { background: #1e1e1e; color: #e0e0e0;"
+    " border: 1px solid #2a2a2a; border-radius: 6px; padding: 6px 18px; }"
+    "QDialogButtonBox QPushButton:default { background: #00bcd4; color: #000;"
+    " border-color: #00bcd4; }"
+)
+
+
+class _ColorPicker(QWidget):
+    """Row of circular color buttons."""
+
+    def __init__(
+        self, selected: str, parent: QWidget | None = None
+    ) -> None:
+        super().__init__(parent)
+        self._selected = selected
+        self._buttons: dict[str, QToolButton] = {}
+        layout = QHBoxLayout(self)
+        layout.setContentsMargins(0, 0, 0, 0)
+        layout.setSpacing(8)
+        from src.models.profile import AVATAR_COLORS
+
+        for color in AVATAR_COLORS:
+            btn = QToolButton()
+            btn.setFixedSize(28, 28)
+            btn.setCheckable(True)
+            btn.setChecked(color == selected)
+            btn.setStyleSheet(
+                f"QToolButton {{ background: {color}; border-radius: 14px;"
+                " border: 2px solid transparent; }"
+                f"QToolButton:checked {{ border-color: #ffffff; }}"
+            )
+            btn.clicked.connect(lambda _, c=color: self._pick(c))
+            self._buttons[color] = btn
+            layout.addWidget(btn)
+        layout.addStretch()
+
+    def _pick(self, color: str) -> None:
+        self._selected = color
+        for c, btn in self._buttons.items():
+            btn.setChecked(c == color)
+
+    @property
+    def selected(self) -> str:
+        return self._selected
+
+
+class NewProfileDialog(QDialog):
+    """Dialog to create a new profile."""
+
+    def __init__(self, parent: QWidget | None = None) -> None:
+        super().__init__(parent)
+        self.setWindowTitle("Nuevo perfil")
+        self.setMinimumWidth(360)
+        self.setStyleSheet(_DIALOG_STYLE)
+        self._build_ui()
+
+    def _build_ui(self) -> None:
+        layout = QVBoxLayout(self)
+        layout.setSpacing(14)
+        layout.setContentsMargins(24, 24, 24, 24)
+
+        layout.addWidget(QLabel("Nombre del perfil:"))
+        self._name_input = QLineEdit()
+        self._name_input.setPlaceholderText("Nombre")
+        self._name_input.setMaxLength(24)
+        layout.addWidget(self._name_input)
+
+        layout.addWidget(QLabel("Color de avatar:"))
+        from src.models.profile import AVATAR_COLORS
+        self._color_picker = _ColorPicker(AVATAR_COLORS[0])
+        layout.addWidget(self._color_picker)
+
+        buttons = QDialogButtonBox(
+            QDialogButtonBox.StandardButton.Ok
+            | QDialogButtonBox.StandardButton.Cancel
+        )
+        ok_btn = buttons.button(QDialogButtonBox.StandardButton.Ok)
+        assert ok_btn is not None
+        self._ok_btn: QPushButton = ok_btn
+        self._ok_btn.setEnabled(False)
+        self._ok_btn.setDefault(True)
+        buttons.accepted.connect(self.accept)
+        buttons.rejected.connect(self.reject)
+        layout.addWidget(buttons)
+
+        self._name_input.textChanged.connect(
+            lambda t: self._ok_btn.setEnabled(bool(t.strip()))
+        )
+
+    @property
+    def selected_name(self) -> str:
+        return self._name_input.text().strip()
+
+    @property
+    def selected_color(self) -> str:
+        return self._color_picker.selected
+
+
+class ProfileSettingsDialog(QDialog):
+    """Dialog to rename, recolor, or delete the active profile."""
+
+    delete_requested = pyqtSignal()
+
+    def __init__(
+        self,
+        profile: Profile,
+        can_delete: bool,
+        parent: QWidget | None = None,
+    ) -> None:
+        super().__init__(parent)
+        self.setWindowTitle("Configurar perfil")
+        self.setMinimumWidth(360)
+        self.setStyleSheet(_DIALOG_STYLE)
+        self._profile = profile
+        self._can_delete = can_delete
+        self._build_ui()
+
+    def _build_ui(self) -> None:
+        layout = QVBoxLayout(self)
+        layout.setSpacing(14)
+        layout.setContentsMargins(24, 24, 24, 24)
+
+        layout.addWidget(QLabel("Nombre:"))
+        self._name_input = QLineEdit(self._profile.name)
+        self._name_input.setMaxLength(24)
+        layout.addWidget(self._name_input)
+
+        layout.addWidget(QLabel("Color de avatar:"))
+        self._color_picker = _ColorPicker(self._profile.color)
+        layout.addWidget(self._color_picker)
+
+        buttons = QDialogButtonBox(
+            QDialogButtonBox.StandardButton.Save
+            | QDialogButtonBox.StandardButton.Cancel
+        )
+        save_btn = buttons.button(QDialogButtonBox.StandardButton.Save)
+        assert save_btn is not None
+        save_btn.setDefault(True)
+        buttons.accepted.connect(self.accept)
+        buttons.rejected.connect(self.reject)
+        layout.addWidget(buttons)
+
+        if self._can_delete:
+            delete_btn = QPushButton("Eliminar perfil")
+            delete_btn.setStyleSheet(
+                "QPushButton { background: #c62828; color: #fff;"
+                " border: none; border-radius: 6px; padding: 6px 18px; }"
+                "QPushButton:hover { background: #e53935; }"
+            )
+            delete_btn.clicked.connect(self._on_delete)
+            layout.addWidget(delete_btn)
+
+    def _on_delete(self) -> None:
+        reply = QMessageBox.question(
+            self,
+            "Eliminar perfil",
+            f"¿Eliminar '{self._profile.name}'? Esta acción no se puede deshacer.",
+            QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No,
+        )
+        if reply == QMessageBox.StandardButton.Yes:
+            self.delete_requested.emit()
+            self.reject()
+
+    @property
+    def selected_name(self) -> str:
+        return self._name_input.text().strip() or self._profile.name
+
+    @property
+    def selected_color(self) -> str:
+        return self._color_picker.selected
+
+
 class ProfileSelectorBar(QWidget):
     """Top bar showing the active profile with switch/add/settings actions."""
 
@@ -137,11 +322,13 @@ class ProfileSelectorBar(QWidget):
         self._add_btn = QToolButton()
         self._add_btn.setText("+")
         self._add_btn.setToolTip("Nuevo perfil")
+        self._add_btn.clicked.connect(self._on_add_profile)
         layout.addWidget(self._add_btn)
 
         self._settings_btn = QToolButton()
         self._settings_btn.setText("⚙")
         self._settings_btn.setToolTip("Configurar perfil")
+        self._settings_btn.clicked.connect(self._on_settings)
         layout.addWidget(self._settings_btn)
 
     def _show_profile_menu(self) -> None:
@@ -168,3 +355,50 @@ class ProfileSelectorBar(QWidget):
         profile = self._manager.switch_profile(profile_id)
         self.refresh()
         self.profile_switched.emit(profile)
+
+    def _on_add_profile(self) -> None:
+        dialog = NewProfileDialog(self)
+        if dialog.exec() != QDialog.DialogCode.Accepted:
+            return
+        name = dialog.selected_name
+        if not name:
+            return
+        profile = self._manager.create_profile(name, dialog.selected_color)
+        self._manager.switch_profile(profile.id)
+        self.refresh()
+        self.profile_switched.emit(profile)
+
+    def _on_settings(self) -> None:
+        profile = self._manager.active_profile()
+        can_delete = len(self._manager.list_profiles()) > 1
+        dialog = ProfileSettingsDialog(profile, can_delete=can_delete, parent=self)
+        dialog.delete_requested.connect(self._on_delete_profile)
+        if dialog.exec() != QDialog.DialogCode.Accepted:
+            return
+        # Apply rename / recolor
+        new_name = dialog.selected_name
+        new_color = dialog.selected_color
+        if new_name == profile.name and new_color == profile.color:
+            return
+        # Rebuild the profile with new values
+        from src.models.profile import Profile as ProfileModel
+        updated = ProfileModel(
+            id=profile.id,
+            name=new_name,
+            color=new_color,
+            playlist_url=profile.playlist_url,
+            playlist_path=profile.playlist_path,
+            favorites=profile.favorites,
+            recent=profile.recent,
+            last_channel_url=profile.last_channel_url,
+        )
+        self._manager._profiles[profile.id] = updated
+        self._manager.save_active()
+        self.refresh()
+
+    def _on_delete_profile(self) -> None:
+        profile_id = self._manager.active_profile().id
+        self._manager.delete_profile(profile_id)
+        new_profile = self._manager.active_profile()
+        self.refresh()
+        self.profile_switched.emit(new_profile)
