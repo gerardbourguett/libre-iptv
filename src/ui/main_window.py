@@ -80,12 +80,16 @@ class MainWindow(QMainWindow):
         right_layout.addWidget(self._grid, stretch=1)
         right_layout.addWidget(self._control_bar)
 
+        left_panel.setMinimumWidth(_DEFAULT_LEFT_WIDTH // 2)
+
         splitter = QSplitter(Qt.Orientation.Horizontal)
         splitter.addWidget(left_panel)
         splitter.addWidget(right_container)
         splitter.setSizes([_DEFAULT_LEFT_WIDTH, 620])
+        splitter.setCollapsible(0, False)
         splitter.setHandleWidth(2)
         splitter.setStyleSheet("QSplitter::handle { background: #3a3a3a; }")
+        splitter.splitterMoved.connect(self._on_splitter_moved)
         self._splitter = splitter
 
         # Wire control bar to always route through the active player
@@ -118,6 +122,7 @@ class MainWindow(QMainWindow):
 
         self._channels: list[Channel] = []
         self._fullscreen: bool = False
+        self._normal_splitter_sizes: list[int] = [_DEFAULT_LEFT_WIDTH, 620]
         self._settings = AppSettings()
         self._restore_settings()
 
@@ -198,17 +203,24 @@ class MainWindow(QMainWindow):
         if hasattr(self, "_profile_bar"):
             self._profile_bar.refresh()
 
+    def _on_splitter_moved(self, pos: int, index: int) -> None:  # noqa: ARG002
+        if not self._fullscreen:
+            self._normal_splitter_sizes = self._splitter.sizes()
+
     def _restore_settings(self) -> None:
         geometry = self._settings.load_geometry()
         if geometry is not None:
             self.restoreGeometry(geometry)
         sizes = self._settings.load_splitter()
-        if sizes is not None:
+        if sizes is not None and len(sizes) == 2 and all(s > 0 for s in sizes):
+            self._normal_splitter_sizes = sizes
             self._splitter.setSizes(sizes)
 
     def closeEvent(self, event: QCloseEvent | None) -> None:
         self._settings.save_geometry(self.saveGeometry())
-        self._settings.save_splitter(self._splitter.sizes())
+        # Never save splitter sizes from fullscreen — the left panel is hidden
+        # and sizes would be [0, X], breaking the next session.
+        self._settings.save_splitter(self._normal_splitter_sizes)
         if self._manager is not None:
             self._manager.save_active()
         super().closeEvent(event)
