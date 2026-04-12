@@ -1,0 +1,60 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - "v[0-9]+.[0-9]+.[0-9]+"
+
+permissions:
+  contents: write
+
+jobs:
+  build-windows:
+    name: Construir y publicar release Windows
+    runs-on: windows-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Configurar Python 3.12
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+
+      - name: Instalar VLC (requerido por python-vlc)
+        shell: powershell
+        run: choco install vlc --yes --no-progress
+
+      - name: Instalar dependencias
+        run: |
+          pip install -e ".[dev]"
+          pip install "pyinstaller>=6.0"
+
+      - name: Ejecutar suite de pruebas
+        run: pytest
+        env:
+          QT_QPA_PLATFORM: offscreen
+
+      - name: Construir ejecutable
+        run: pyinstaller iptv-player.spec
+
+      - name: Comprimir distribución
+        shell: powershell
+        run: |
+          $ver = "${{ github.ref_name }}"
+          Compress-Archive `
+            -Path "dist\IPTV-Player" `
+            -DestinationPath "IPTV-Player-$ver-windows.zip"
+
+      - name: Publicar release en GitHub
+        env:
+          GH_TOKEN: ${{ github.token }}
+        shell: bash
+        run: |
+          VERSION="${{ github.ref_name }}"
+          gh release create "$VERSION" \
+            --title "IPTV Player $VERSION" \
+            --generate-notes \
+            --verify-tag \
+            "IPTV-Player-${VERSION}-windows.zip#IPTV Player ${VERSION} — Windows (zip)"
