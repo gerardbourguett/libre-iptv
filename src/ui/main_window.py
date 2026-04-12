@@ -1,7 +1,7 @@
 from pathlib import Path
 
 from PyQt6.QtCore import Qt, QThread, pyqtSignal
-from PyQt6.QtGui import QCloseEvent
+from PyQt6.QtGui import QCloseEvent, QKeyEvent
 from PyQt6.QtWidgets import (
     QApplication,
     QFileDialog,
@@ -17,6 +17,7 @@ from PyQt6.QtWidgets import (
 )
 
 from src.models.channel import Channel
+from src.models.profile import Profile
 from src.parser.m3u import fetch_best_playlist, parse_m3u_file
 from src.profiles.manager import ProfileManager
 from src.ui.app_settings import AppSettings
@@ -55,7 +56,7 @@ class MainWindow(QMainWindow):
         self.setWindowTitle("IPTV Player")
         self.setMinimumSize(900, 600)
 
-        self._channel_list_panel = ChannelListPanel()
+        self._channel_list_panel = ChannelListPanel(manager=manager)
         self._channel_list = self._channel_list_panel.channel_list
         self._grid = GridPlayerWidget()
         self._control_bar = ControlBarWidget()
@@ -68,6 +69,7 @@ class MainWindow(QMainWindow):
         left_layout.setSpacing(0)
         if manager is not None:
             self._profile_bar = ProfileSelectorBar(manager)
+            self._profile_bar.profile_switched.connect(self._on_profile_switched)
             left_layout.addWidget(self._profile_bar)
         left_layout.addWidget(self._channel_list_panel)
 
@@ -111,10 +113,16 @@ class MainWindow(QMainWindow):
         self._build_layout_toolbar()
 
         self._channel_list.channel_selected.connect(self._on_channel_selected)
+        self._channel_list.favorite_toggled.connect(self._on_favorite_toggled)
         self._grid.active_cell_changed.connect(self._on_active_cell_changed)
 
+        self._channels: list[Channel] = []
+        self._fullscreen: bool = False
         self._settings = AppSettings()
         self._restore_settings()
+
+        if manager is not None:
+            self._auto_load_profile(manager.active_profile())
 
     def _build_layout_toolbar(self) -> None:
         toolbar = QToolBar("Layout")
@@ -151,6 +159,45 @@ class MainWindow(QMainWindow):
         for m, btn in self._layout_buttons.items():
             btn.setChecked(m == mode)
 
+    def _auto_load_profile(self, profile: Profile) -> None:
+        """Load playlist for the given profile if one is configured."""
+        if profile.playlist_path:
+            channels = parse_m3u_file(Path(profile.playlist_path))
+            self._channels = channels
+            self._reload_channel_list()
+            sb = self.statusBar()
+            if sb:
+                sb.showMessage(f"{len(channels)} channels loaded")
+        elif profile.playlist_url:
+            sb = self.statusBar()
+            if sb:
+                sb.showMessage("Fetching playlist...")
+            self._fetch_worker = PlaylistFetchWorker(profile.playlist_url)
+            self._fetch_worker.fetched.connect(self._on_fetch_complete)
+            self._fetch_worker.error.connect(self._on_fetch_error)
+            self._fetch_worker.start()
+
+    def _reload_channel_list(self) -> None:
+        """Reload the channel list with current profile's favorites and recent."""
+        favorites: list[str] = []
+        recent: list[str] = []
+        if self._manager is not None:
+            profile = self._manager.active_profile()
+            favorites = profile.favorites
+            recent = profile.recent
+        self._channel_list.load_channels(
+            self._channels, favorites=favorites, recent=recent
+        )
+
+    def _on_profile_switched(self, profile: Profile) -> None:
+        """Handle profile switch: stop playback, clear list, auto-load new playlist."""
+        self._grid.stop_active()
+        self._channels = []
+        self._channel_list.load_channels([])
+        self._auto_load_profile(profile)
+        if hasattr(self, "_profile_bar"):
+            self._profile_bar.refresh()
+
     def _restore_settings(self) -> None:
         geometry = self._settings.load_geometry()
         if geometry is not None:
@@ -165,6 +212,38 @@ class MainWindow(QMainWindow):
         if self._manager is not None:
             self._manager.save_active()
         super().closeEvent(event)
+
+    def keyPressEvent(self, event: QKeyEvent | None) -> None:
+        if event is None:
+            return
+        key = event.key()
+        text = event.text()
+
+        if key == Qt.Key.Key_F11 or (key == Qt.Key.Key_F and not text):
+            self._toggle_fullscreen()
+        elif key == Qt.Key.Key_Escape and self._fullscreen:
+            self._fullscreen = False
+            self.showNormal()
+        elif text == "1":
+            self._set_layout_mode(1)
+        elif text == "2":
+            self._set_layout_mode(2)
+        elif text == "4":
+            self._set_layout_mode(4)
+        elif key == Qt.Key.Key_M:
+            self._grid.active_player().toggle_mute()
+        elif key == Qt.Key.Key_Space:
+            self._grid.stop_active()
+        else:
+            super().keyPressEvent(event)
+
+    def _toggle_fullscreen(self) -> None:
+        if self._fullscreen:
+            self._fullscreen = False
+            self.showNormal()
+        else:
+            self._fullscreen = True
+            self.showFullScreen()
 
     def _build_menus(self, menu_bar: QMenuBar) -> None:
         file_menu = menu_bar.addMenu("File")
@@ -215,10 +294,18 @@ class MainWindow(QMainWindow):
         self._fetch_worker.start()
 
     def _on_fetch_complete(self, channels: list[Channel]) -> None:
-        self._channel_list.load_channels(channels)
+        self._channels = channels
+        self._reload_channel_list()
         status_bar = self.statusBar()
         assert status_bar is not None
         status_bar.showMessage(f"{len(channels)} channels loaded")
+
+    def _on_favorite_toggled(self, channel_url: str) -> None:
+        if self._manager is None:
+            return
+        self._manager.toggle_favorite(channel_url)
+        self._manager.save_active()
+        self._channel_list.reload_with_profile(self._manager.active_profile())
 
     def _on_fetch_error(self, message: str) -> None:
         status_bar = self.statusBar()

@@ -1,4 +1,4 @@
-from PyQt6.QtCore import Qt
+from PyQt6.QtCore import Qt, pyqtSignal
 from PyQt6.QtGui import QColor, QFont, QPainter
 from PyQt6.QtWidgets import (
     QHBoxLayout,
@@ -8,6 +8,7 @@ from PyQt6.QtWidgets import (
     QWidget,
 )
 
+from src.models.profile import Profile
 from src.profiles.manager import ProfileManager
 
 _BAR_HEIGHT = 48
@@ -84,6 +85,8 @@ class _NameButton(QToolButton):
 
 class ProfileSelectorBar(QWidget):
     """Top bar showing the active profile with switch/add/settings actions."""
+
+    profile_switched = pyqtSignal(Profile)
 
     def __init__(
         self, manager: ProfileManager, parent: QWidget | None = None
@@ -162,5 +165,6 @@ class ProfileSelectorBar(QWidget):
     def _on_switch(self, profile_id: str) -> None:
         if profile_id == self._manager.active_profile().id:
             return
-        self._manager.switch_profile(profile_id)
+        profile = self._manager.switch_profile(profile_id)
         self.refresh()
+        self.profile_switched.emit(profile)

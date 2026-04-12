@@ -1,16 +1,24 @@
-from dataclasses import dataclass
+from __future__ import annotations
 
-from PyQt6.QtCore import Qt, pyqtSignal
+from dataclasses import dataclass
+from typing import TYPE_CHECKING
+
+from PyQt6.QtCore import QPoint, Qt, pyqtSignal
 from PyQt6.QtGui import QColor, QFont
 from PyQt6.QtWidgets import (
     QLineEdit,
     QListWidget,
     QListWidgetItem,
+    QMenu,
     QVBoxLayout,
     QWidget,
 )
 
 from src.models.channel import Channel
+
+if TYPE_CHECKING:
+    from src.models.profile import Profile
+    from src.profiles.manager import ProfileManager
 
 _UNCATEGORIZED = "Uncategorized"
 
@@ -24,9 +32,16 @@ class _GroupHeader:
 
 class ChannelListWidget(QListWidget):
     channel_selected = pyqtSignal(Channel)
+    favorite_toggled = pyqtSignal(str)  # emits channel.url
 
-    def __init__(self, parent: QWidget | None = None) -> None:
+    def __init__(
+        self,
+        manager: ProfileManager | None = None,
+        parent: QWidget | None = None,
+    ) -> None:
         super().__init__(parent)
+        self._manager = manager
+        self._channels: list[Channel] = []
         self._collapsed_groups: set[str] = set()
         self._current_query: str = ""
         self.setStyleSheet(
@@ -36,6 +51,8 @@ class ChannelListWidget(QListWidget):
             "QListWidget::item:hover:!selected { background: #222222; }"
         )
         self.itemClicked.connect(self._on_item_clicked)
+        self.setContextMenuPolicy(Qt.ContextMenuPolicy.CustomContextMenu)
+        self.customContextMenuRequested.connect(self._on_context_menu)
 
     def load_channels(
         self,
@@ -46,6 +63,7 @@ class ChannelListWidget(QListWidget):
         self.clear()
         self._collapsed_groups.clear()
         self._current_query = ""
+        self._channels = list(channels)
 
         url_to_channel: dict[str, Channel] = {ch.url: ch for ch in channels}
 
@@ -156,9 +174,53 @@ class ChannelListWidget(QListWidget):
             item.setText(f"{arrow} {group_name} ({data.count})")
             self._apply_visibility(self._current_query)
 
+    def toggle_favorite_for_item(self, item: QListWidgetItem) -> None:
+        """Toggle favorite for a channel item and emit favorite_toggled."""
+        data = item.data(Qt.ItemDataRole.UserRole)
+        if isinstance(data, Channel):
+            self.favorite_toggled.emit(data.url)
+
+    def reload_with_profile(self, profile: Profile) -> None:
+        """Reload the list with updated favorites/recent from profile."""
+        self.load_channels(
+            self._channels,
+            favorites=profile.favorites,
+            recent=profile.recent,
+        )
+
+    def _on_context_menu(self, pos: QPoint) -> None:
+        item = self.itemAt(pos)
+        if item is None:
+            return
+        data = item.data(Qt.ItemDataRole.UserRole)
+        if not isinstance(data, Channel):
+            return
+
+        favorites: list[str] = []
+        if self._manager is not None:
+            favorites = self._manager.active_profile().favorites
+
+        menu = QMenu(self)
+        menu.setStyleSheet(
+            "QMenu { background: #1e1e1e; color: #e0e0e0;"
+            " border: 1px solid #2a2a2a; }"
+            "QMenu::item:selected { background: #00bcd4; color: #000000; }"
+        )
+        if data.url in favorites:
+            action = menu.addAction("✕ Quitar de Favoritos")
+        else:
+            action = menu.addAction("★ Agregar a Favoritos")
+        assert action is not None
+        action.triggered.connect(lambda: self.toggle_favorite_for_item(item))
+        menu.exec(self.mapToGlobal(pos))
+
 
 class ChannelListPanel(QWidget):
-    def __init__(self, parent: QWidget | None = None) -> None:
+    def __init__(
+        self,
+        manager: ProfileManager | None = None,
+        parent: QWidget | None = None,
+    ) -> None:
         super().__init__(parent)
         self._search = QLineEdit()
         self._search.setPlaceholderText("Search channels\u2026")
@@ -168,7 +230,7 @@ class ChannelListPanel(QWidget):
             "font-size: 13px; }"
             "QLineEdit:focus { border-color: #00bcd4; }"
         )
-        self.channel_list = ChannelListWidget()
+        self.channel_list = ChannelListWidget(manager=manager)
 
         layout = QVBoxLayout(self)
         layout.setContentsMargins(0, 0, 0, 0)
@@ -178,5 +240,6 @@ class ChannelListPanel(QWidget):
 
         self._search.textChanged.connect(self.channel_list.filter_channels)
 
-        # Expose signal for external wiring convenience
+        # Expose signals for external wiring convenience
         self.channel_selected = self.channel_list.channel_selected
+        self.favorite_toggled = self.channel_list.favorite_toggled
