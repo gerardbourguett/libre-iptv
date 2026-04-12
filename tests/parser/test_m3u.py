@@ -83,6 +83,32 @@ class TestParseM3uString:
         channels = parse_m3u(content)
         assert channels[0].url == url
 
+    def test_extgrp_directive_between_extinf_and_url(self) -> None:
+        """S9: #EXTGRP directives between #EXTINF and URL are skipped."""
+        content = (
+            "#EXTM3U\n"
+            "#EXTINF:-1 group-title=\"News\",CNN\n"
+            "#EXTGRP:News\n"
+            "http://cnn.com\n"
+        )
+        channels = parse_m3u(content)
+        assert len(channels) == 1
+        assert channels[0].name == "CNN"
+        assert channels[0].url == "http://cnn.com"
+
+    def test_multiple_intermediate_directives_skipped(self) -> None:
+        """S10: Multiple # directives between #EXTINF and URL are all skipped."""
+        content = (
+            "#EXTINF:-1,Canal HD\n"
+            "#KODIPROP:inputstreamaddon=inputstream.adaptive\n"
+            "#KODIPROP:inputstream.adaptive.manifest_type=hls\n"
+            "#EXTVLCOPT:http-user-agent=Mozilla\n"
+            "http://stream.example.com/hd\n"
+        )
+        channels = parse_m3u(content)
+        assert len(channels) == 1
+        assert channels[0].url == "http://stream.example.com/hd"
+
 
 class TestParseM3uUrl:
     def _mock_response(self, content: str):
@@ -241,3 +267,21 @@ class TestParseM3uFile:
             assert channels[0].name == "Türkçe Kanal"
         finally:
             tmp.unlink()
+
+    def test_latin1_encoding_fallback(self, tmp_path: Path) -> None:
+        """S5: Files with latin-1 encoding are decoded without error."""
+        content = "#EXTINF:-1,Canal Español\nhttp://stream.example.com/es\n"
+        latin1_file = tmp_path / "latin1.m3u"
+        latin1_file.write_bytes(content.encode("latin-1"))
+        channels = parse_m3u_file(latin1_file)
+        assert len(channels) == 1
+        assert channels[0].name == "Canal Español"
+
+    def test_cp1252_encoding_fallback(self, tmp_path: Path) -> None:
+        """S6: Files with cp1252 encoding (common on Windows) are decoded."""
+        content = "#EXTINF:-1,Canção\nhttp://stream.example.com/pt\n"
+        cp1252_file = tmp_path / "cp1252.m3u"
+        cp1252_file.write_bytes(content.encode("cp1252"))
+        channels = parse_m3u_file(cp1252_file)
+        assert len(channels) == 1
+        assert "Can" in channels[0].name

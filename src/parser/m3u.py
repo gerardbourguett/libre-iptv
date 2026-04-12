@@ -25,16 +25,22 @@ def parse_m3u(content: str) -> list[Channel]:
             continue
 
         extinf_line = line
-        # Next non-blank line must be the URL — stop if another directive found
-        url = ""
+        # Skip intermediate directives (#EXTGRP, #KODIPROP, #EXTVLCOPT, etc.)
+        # Stop if we hit another #EXTINF (malformed entry with no URL).
         j = i + 1
-        if j < len(lines) and not lines[j].startswith("#"):
-            url = lines[j]
+        while (
+            j < len(lines)
+            and lines[j].startswith("#")
+            and not lines[j].startswith("#EXTINF")
+        ):
+            j += 1
 
-        if not url:
+        if j >= len(lines) or lines[j].startswith("#"):
             logger.warning("Skipping #EXTINF with no URL: %s", extinf_line)
-            i += 1
+            i += 1  # retry from next line (may be another #EXTINF)
             continue
+
+        url = lines[j]
 
         attrs: dict[str, str] = {
             k: v for k, v in _ATTR_RE.findall(extinf_line)
@@ -106,8 +112,16 @@ def fetch_best_playlist(url: str) -> list[Channel]:
 
 
 def parse_m3u_file(path: str | Path) -> list[Channel]:
-    """Read an M3U file from disk and return a list of Channel instances."""
-    content = Path(path).read_text(encoding="utf-8")
+    """Read an M3U file from disk and return a list of Channel instances.
+
+    Tries UTF-8 first; falls back to latin-1 for files from providers that
+    use legacy encodings (common with Latin American IPTV services).
+    """
+    p = Path(path)
+    try:
+        content = p.read_text(encoding="utf-8")
+    except UnicodeDecodeError:
+        content = p.read_text(encoding="latin-1")
     return parse_m3u(content)
 
 
