@@ -1,5 +1,7 @@
+from dataclasses import dataclass
+
 from PyQt6.QtCore import Qt, pyqtSignal
-from PyQt6.QtGui import QFont
+from PyQt6.QtGui import QColor, QFont
 from PyQt6.QtWidgets import (
     QLineEdit,
     QListWidget,
@@ -13,69 +15,106 @@ from src.models.channel import Channel
 _UNCATEGORIZED = "Uncategorized"
 
 
+@dataclass
+class _GroupHeader:
+    name: str
+    count: int
+
+
 class ChannelListWidget(QListWidget):
     channel_selected = pyqtSignal(Channel)
 
     def __init__(self, parent: QWidget | None = None) -> None:
         super().__init__(parent)
+        self._collapsed_groups: set[str] = set()
+        self._current_query: str = ""
+        self.setStyleSheet(
+            "QListWidget { border: none; background: #252525; outline: none; }"
+            "QListWidget::item { padding: 4px 8px; color: #e0e0e0; }"
+            "QListWidget::item:selected { background: #0d6efd; color: #ffffff; }"
+            "QListWidget::item:hover:!selected { background: #3a3a3a; }"
+        )
         self.itemClicked.connect(self._on_item_clicked)
 
     def load_channels(self, channels: list[Channel]) -> None:
         self.clear()
+        self._collapsed_groups.clear()
+        self._current_query = ""
         groups: dict[str, list[Channel]] = {}
         for ch in channels:
             key = ch.group if ch.group else _UNCATEGORIZED
             groups.setdefault(key, []).append(ch)
 
         for group_name, group_channels in groups.items():
-            self._add_header(group_name)
+            self._add_header(group_name, len(group_channels))
             for ch in group_channels:
                 self._add_channel(ch)
 
-    def _add_header(self, text: str) -> None:
-        item = QListWidgetItem(text)
+    def _add_header(self, text: str, count: int) -> None:
+        item = QListWidgetItem(f"▼ {text} ({count})")
         item.setFlags(Qt.ItemFlag.NoItemFlags)
         font = QFont()
         font.setBold(True)
         item.setFont(font)
+        item.setForeground(QColor("#888888"))
+        item.setBackground(QColor("#1a1a2e"))
+        item.setData(Qt.ItemDataRole.UserRole, _GroupHeader(name=text, count=count))
         self.addItem(item)
 
     def _add_channel(self, channel: Channel) -> None:
-        item = QListWidgetItem(channel.name)
+        item = QListWidgetItem(f"  {channel.name}")
         item.setData(Qt.ItemDataRole.UserRole, channel)
         self.addItem(item)
 
-    def filter_channels(self, text: str) -> None:
-        query = text.lower().strip()
-        # Track which header indices have at least one visible channel
+    def _apply_visibility(self, query: str) -> None:
+        """Single-pass visibility update respecting both collapse state and search."""
+        q = query.lower().strip()
+        current_group: str | None = None
         header_has_visible: dict[int, bool] = {}
         current_header_idx: int | None = None
 
         for i in range(self.count()):
             item = self.item(i)
             assert item is not None
-            channel = item.data(Qt.ItemDataRole.UserRole)
-            if isinstance(channel, Channel):
-                # Channel item: show if query is empty or name matches
-                visible = not query or query in channel.name.lower()
+            data = item.data(Qt.ItemDataRole.UserRole)
+
+            if isinstance(data, _GroupHeader):
+                current_group = data.name
+                current_header_idx = i
+                header_has_visible[i] = False
+            elif isinstance(data, Channel):
+                if q:
+                    visible = q in data.name.lower()
+                else:
+                    visible = current_group not in self._collapsed_groups
                 item.setHidden(not visible)
                 if current_header_idx is not None and visible:
                     header_has_visible[current_header_idx] = True
-            else:
-                # Header item
-                current_header_idx = i
-                header_has_visible[i] = False
 
-        # Second pass: hide headers with no visible channels
+        # Second pass: hide headers that have no visible channels
         for header_idx, has_visible in header_has_visible.items():
             hdr = self.item(header_idx)
             assert hdr is not None
             hdr.setHidden(not has_visible)
 
+    def filter_channels(self, text: str) -> None:
+        self._current_query = text
+        self._apply_visibility(text)
+
     def _on_item_clicked(self, item: QListWidgetItem) -> None:
-        channel = item.data(Qt.ItemDataRole.UserRole)
-        if isinstance(channel, Channel):
-            self.channel_selected.emit(channel)
+        data = item.data(Qt.ItemDataRole.UserRole)
+        if isinstance(data, Channel):
+            self.channel_selected.emit(data)
+        elif isinstance(data, _GroupHeader):
+            group_name = data.name
+            if group_name in self._collapsed_groups:
+                self._collapsed_groups.discard(group_name)
+                arrow = "▼"
+            else:
+                self._collapsed_groups.add(group_name)
+                arrow = "▶"
+            item.setText(f"{arrow} {group_name} ({data.count})")
+            self._apply_visibility(self._current_query)
 
 
 class ChannelListPanel(QWidget):
@@ -83,6 +122,11 @@ class ChannelListPanel(QWidget):
         super().__init__(parent)
         self._search = QLineEdit()
         self._search.setPlaceholderText("Search channels\u2026")
+        self._search.setStyleSheet(
+            "QLineEdit { background: #2d2d2d; color: #e0e0e0; "
+            "border: 1px solid #3a3a3a; border-radius: 4px; padding: 4px 8px; }"
+            "QLineEdit:focus { border-color: #0d6efd; }"
+        )
         self.channel_list = ChannelListWidget()
 
         layout = QVBoxLayout(self)

@@ -187,6 +187,46 @@ class TestSettingsIntegration:
         mock_settings.save_last_playlist.assert_called_once_with("/home/user/playlist.m3u")
 
 
+class TestLayoutSwitcher:
+    def test_window_has_grid_attribute(self, window):
+        """MainWindow exposes _grid (GridPlayerWidget)."""
+        from src.ui.grid_player_widget import GridPlayerWidget
+        assert hasattr(window, "_grid")
+        assert isinstance(window._grid, GridPlayerWidget)
+
+    def test_layout_toolbar_has_three_buttons(self, window):
+        """Layout toolbar has Single, Dual, and Quad buttons."""
+        from PyQt6.QtWidgets import QToolButton
+        buttons = window.findChildren(QToolButton)
+        labels = [b.text() for b in buttons]
+        assert any("1" in t or "Single" in t or "⬜" in t for t in labels)
+        assert any("2" in t or "Dual" in t or "⬛" in t for t in labels)
+        assert any("4" in t or "Quad" in t or "▦" in t for t in labels)
+
+    def test_view_menu_exists(self, window):
+        """A View menu is present in the menu bar."""
+        menu_bar = window.menuBar()
+        texts = [a.text() for a in menu_bar.actions()]
+        assert "View" in texts
+
+
+class TestDarkTheme:
+    def test_configure_app_sets_fusion_style(self, qtbot):
+        """configure_app applies Fusion style to the QApplication."""
+        from PyQt6.QtWidgets import QApplication
+
+        from main import configure_app
+
+        configure_app(QApplication.instance())
+        assert QApplication.style().objectName() == "fusion"
+
+    def test_status_bar_has_stylesheet(self, window):
+        """Status bar has a custom stylesheet applied."""
+        status_bar = window.statusBar()
+        assert status_bar is not None
+        assert len(status_bar.styleSheet()) > 0
+
+
 class TestOpenPlaylist:
     def test_open_playlist_dialog_uses_correct_filter(self, window, monkeypatch):
         """Dialog is opened with the M3U file filter."""

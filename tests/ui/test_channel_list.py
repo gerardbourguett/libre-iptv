@@ -28,7 +28,7 @@ class TestLoadChannels:
         # Expected: "News" header, CNN, BBC, "Sports" header, ESPN = 5 items
         assert widget.count() == 5
         news_header = widget.item(0)
-        assert news_header.text() == "News"
+        assert "▼" in news_header.text() and "News" in news_header.text()
         assert not (news_header.flags() & Qt.ItemFlag.ItemIsSelectable)
 
     def test_channels_with_empty_group_go_to_uncategorized(self, widget):
@@ -41,7 +41,7 @@ class TestLoadChannels:
         # "Uncategorized" header + 2 channels = 3 items
         assert widget.count() == 3
         header = widget.item(0)
-        assert header.text() == "Uncategorized"
+        assert "▼" in header.text() and "Uncategorized" in header.text()
         assert not (header.flags() & Qt.ItemFlag.ItemIsSelectable)
 
     def test_load_empty_list_clears_widget(self, widget, news_sports_channels):
@@ -133,6 +133,91 @@ class TestFilterChannels:
         widget.filter_channels("cnn")  # lowercase
         cnn_item = widget.item(1)
         assert not cnn_item.isHidden()
+
+
+class TestCollapsibleGroups:
+    @pytest.fixture
+    def news_widget(self, qtbot):
+        w = ChannelListWidget()
+        qtbot.addWidget(w)
+        channels = [
+            Channel(url="http://cnn.com", name="CNN", group="News"),
+            Channel(url="http://bbc.com", name="BBC", group="News"),
+        ]
+        w.load_channels(channels)
+        return w
+
+    def test_header_starts_expanded(self, news_widget):
+        """Groups start expanded with ▼ arrow indicator."""
+        header = news_widget.item(0)
+        assert "▼" in header.text()
+        assert not news_widget.item(1).isHidden()
+
+    def test_header_text_includes_count(self, news_widget):
+        """Header shows arrow, group name, and channel count."""
+        header = news_widget.item(0)
+        assert "▼ News (2)" in header.text()
+
+    def test_click_header_collapses_group(self, news_widget):
+        """Clicking an expanded header hides its channels and flips arrow to ▶."""
+        header = news_widget.item(0)
+        news_widget.itemClicked.emit(header)
+        assert "▶" in header.text()
+        assert news_widget.item(1).isHidden()
+
+    def test_click_collapsed_header_expands(self, news_widget):
+        """Clicking a collapsed header shows its channels and flips arrow to ▼."""
+        header = news_widget.item(0)
+        news_widget.itemClicked.emit(header)  # collapse
+        news_widget.itemClicked.emit(header)  # expand
+        assert "▼" in header.text()
+        assert not news_widget.item(1).isHidden()
+
+    def test_search_shows_channels_in_collapsed_group(self, news_widget):
+        """Search query overrides collapse — matching channels become visible."""
+        header = news_widget.item(0)
+        news_widget.itemClicked.emit(header)  # collapse group
+        news_widget.filter_channels("CNN")
+        assert not news_widget.item(1).isHidden()  # CNN visible despite collapse
+
+    def test_clear_search_restores_collapse(self, news_widget):
+        """Clearing the search restores collapsed groups to hidden."""
+        header = news_widget.item(0)
+        news_widget.itemClicked.emit(header)   # collapse
+        news_widget.filter_channels("CNN")     # override
+        news_widget.filter_channels("")        # clear
+        assert news_widget.item(1).isHidden()  # back to collapsed
+
+    def test_load_resets_collapse_state(self, news_widget):
+        """Loading new channels resets all collapse state to expanded."""
+        header = news_widget.item(0)
+        news_widget.itemClicked.emit(header)  # collapse
+        channels = [
+            Channel(url="http://cnn.com", name="CNN", group="News"),
+            Channel(url="http://bbc.com", name="BBC", group="News"),
+        ]
+        news_widget.load_channels(channels)
+        new_header = news_widget.item(0)
+        assert "▼" in new_header.text()
+        assert not news_widget.item(1).isHidden()
+
+
+class TestChannelListStyling:
+    def test_widget_has_stylesheet(self, widget):
+        """ChannelListWidget applies a stylesheet."""
+        assert len(widget.styleSheet()) > 0
+
+    def test_header_has_muted_foreground(self, widget, news_sports_channels):
+        """Category headers use muted grey foreground #888888."""
+        widget.load_channels(news_sports_channels)
+        header = widget.item(0)
+        assert header.foreground().color().name() == "#888888"
+
+    def test_channel_item_has_indent(self, widget, news_sports_channels):
+        """Channel items have a leading 2-space indent."""
+        widget.load_channels(news_sports_channels)
+        channel_item = widget.item(1)  # CNN after News header
+        assert channel_item.text().startswith("  ")
 
 
 class TestChannelListPanel:

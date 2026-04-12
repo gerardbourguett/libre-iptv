@@ -54,6 +54,36 @@ class TestPlayerWidget:
         player.release.assert_called_once()
 
 
+class TestPlayerWidgetSignals:
+    def test_clicked_signal_emitted_on_mouse_press(self, widget, qtbot, mock_vlc):
+        """Clicking the player widget emits the clicked signal."""
+        from PyQt6.QtCore import Qt
+        from PyQt6.QtGui import QMouseEvent
+        from PyQt6.QtCore import QPoint, QPointF
+
+        with qtbot.waitSignal(widget.clicked, timeout=1000):
+            event = QMouseEvent(
+                QMouseEvent.Type.MouseButtonPress,
+                QPointF(0, 0),
+                QPointF(0, 0),
+                Qt.MouseButton.LeftButton,
+                Qt.MouseButton.LeftButton,
+                Qt.KeyboardModifier.NoModifier,
+            )
+            widget.mousePressEvent(event)
+
+    def test_set_active_true_sets_border_stylesheet(self, widget, mock_vlc):
+        """set_active(True) adds a blue border to the widget."""
+        widget.set_active(True)
+        assert "0d6efd" in widget.styleSheet()
+
+    def test_set_active_false_clears_border(self, widget, mock_vlc):
+        """set_active(False) removes the active border."""
+        widget.set_active(True)
+        widget.set_active(False)
+        assert "0d6efd" not in widget.styleSheet()
+
+
 class TestPlayerWidgetVolume:
     def test_set_volume_calls_vlc_audio_set_volume(self, widget, mock_vlc):
         _, player = mock_vlc

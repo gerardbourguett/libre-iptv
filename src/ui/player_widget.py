@@ -1,10 +1,12 @@
 import vlc
-from PyQt6.QtCore import QTimer
-from PyQt6.QtGui import QCloseEvent, QShowEvent  # noqa: F401
+from PyQt6.QtCore import QTimer, pyqtSignal
+from PyQt6.QtGui import QCloseEvent, QMouseEvent, QShowEvent  # noqa: F401
 from PyQt6.QtWidgets import QFrame, QWidget
 
 
 class PlayerWidget(QFrame):
+    clicked = pyqtSignal()
+
     def __init__(self, parent: QWidget | None = None) -> None:
         super().__init__(parent)
         self.setStyleSheet("background-color: black;")
@@ -21,7 +23,21 @@ class PlayerWidget(QFrame):
         self._media_player.set_hwnd(int(self.winId()))
         self._hwnd_bound = True
 
+    def mousePressEvent(self, event: QMouseEvent | None) -> None:
+        self.clicked.emit()
+        super().mousePressEvent(event)
+
+    def set_active(self, active: bool) -> None:
+        if active:
+            self.setStyleSheet(
+                "background-color: black; border: 2px solid #0d6efd;"
+            )
+        else:
+            self.setStyleSheet("background-color: black;")
+
     def play(self, url: str) -> None:
+        if not self._hwnd_bound:
+            self._bind_vlc()
         media = self._vlc_instance.media_new(url)
         self._media_player.set_media(media)
         self._media_player.play()

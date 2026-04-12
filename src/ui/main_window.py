@@ -10,6 +10,8 @@ from PyQt6.QtWidgets import (
     QMenuBar,
     QSplitter,
     QStatusBar,
+    QToolBar,
+    QToolButton,
     QVBoxLayout,
     QWidget,
 )
@@ -19,7 +21,7 @@ from src.parser.m3u import parse_m3u_file, parse_m3u_url
 from src.ui.app_settings import AppSettings
 from src.ui.channel_list import ChannelListPanel
 from src.ui.control_bar import ControlBarWidget
-from src.ui.player_widget import PlayerWidget
+from src.ui.grid_player_widget import GridPlayerWidget
 
 _DEFAULT_LEFT_WIDTH = 280
 
@@ -48,7 +50,7 @@ class MainWindow(QMainWindow):
 
         self._channel_list_panel = ChannelListPanel()
         self._channel_list = self._channel_list_panel.channel_list
-        self._player = PlayerWidget()
+        self._grid = GridPlayerWidget()
         self._control_bar = ControlBarWidget()
         self._fetch_worker: PlaylistFetchWorker | None = None
 
@@ -56,33 +58,70 @@ class MainWindow(QMainWindow):
         right_layout = QVBoxLayout(right_container)
         right_layout.setContentsMargins(0, 0, 0, 0)
         right_layout.setSpacing(0)
-        right_layout.addWidget(self._player, stretch=1)
+        right_layout.addWidget(self._grid, stretch=1)
         right_layout.addWidget(self._control_bar)
 
         splitter = QSplitter(Qt.Orientation.Horizontal)
         splitter.addWidget(self._channel_list_panel)
         splitter.addWidget(right_container)
         splitter.setSizes([_DEFAULT_LEFT_WIDTH, 620])
+        splitter.setHandleWidth(2)
+        splitter.setStyleSheet("QSplitter::handle { background: #3a3a3a; }")
         self._splitter = splitter
 
-        self._control_bar.volume_changed.connect(self._player.set_volume)
-        self._control_bar.stop_requested.connect(self._player.stop)
-        self._control_bar.mute_toggled.connect(lambda _: self._player.toggle_mute())
+        # Wire control bar to always route through the active player
+        self._control_bar.volume_changed.connect(
+            lambda v: self._grid.active_player().set_volume(v)
+        )
+        self._control_bar.stop_requested.connect(self._grid.stop_active)
+        self._control_bar.mute_toggled.connect(
+            lambda _: self._grid.active_player().toggle_mute()
+        )
 
         self.setCentralWidget(splitter)
 
         status_bar = QStatusBar()
+        status_bar.setStyleSheet(
+            "QStatusBar { background: #1a1a1a; color: #888888; "
+            "border-top: 1px solid #3a3a3a; }"
+        )
         self.setStatusBar(status_bar)
         status_bar.showMessage("No playlist loaded")
 
         menu_bar = QMenuBar()
         self.setMenuBar(menu_bar)
         self._build_menus(menu_bar)
+        self._build_layout_toolbar()
 
         self._channel_list.channel_selected.connect(self._on_channel_selected)
 
         self._settings = AppSettings()
         self._restore_settings()
+
+    def _build_layout_toolbar(self) -> None:
+        toolbar = QToolBar("Layout")
+        toolbar.setMovable(False)
+        toolbar.setObjectName("layout_toolbar")
+
+        btn_single = QToolButton()
+        btn_single.setText("⬜ 1")
+        btn_single.setToolTip("Single view")
+        btn_single.clicked.connect(lambda: self._grid.set_mode(1))
+
+        btn_dual = QToolButton()
+        btn_dual.setText("⬛ 2")
+        btn_dual.setToolTip("Dual view")
+        btn_dual.clicked.connect(lambda: self._grid.set_mode(2))
+
+        btn_quad = QToolButton()
+        btn_quad.setText("▦ 4")
+        btn_quad.setToolTip("Quad view")
+        btn_quad.clicked.connect(lambda: self._grid.set_mode(4))
+
+        toolbar.addWidget(btn_single)
+        toolbar.addWidget(btn_dual)
+        toolbar.addWidget(btn_quad)
+        self.addToolBar(toolbar)
 
     def _restore_settings(self) -> None:
         geometry = self._settings.load_geometry()
@@ -107,7 +146,15 @@ class MainWindow(QMainWindow):
 
         playback_menu = menu_bar.addMenu("Playback")
         assert playback_menu is not None
-        playback_menu.addAction("Stop", self._player.stop)
+        playback_menu.addAction("Stop", self._grid.stop_active)
+
+        view_menu = menu_bar.addMenu("View")
+        assert view_menu is not None
+        layout_menu = view_menu.addMenu("Layout")
+        assert layout_menu is not None
+        layout_menu.addAction("Single", lambda: self._grid.set_mode(1))
+        layout_menu.addAction("Dual", lambda: self._grid.set_mode(2))
+        layout_menu.addAction("Quad", lambda: self._grid.set_mode(4))
 
     def _open_playlist(self) -> None:
         path, _ = QFileDialog.getOpenFileName(
@@ -149,7 +196,7 @@ class MainWindow(QMainWindow):
         status_bar.showMessage(f"Error: {message}")
 
     def _on_channel_selected(self, channel: Channel) -> None:
-        self._player.play(channel.url)
+        self._grid.play_in_active(channel.url)
         status_bar = self.statusBar()
         assert status_bar is not None
         status_bar.showMessage(channel.name)
