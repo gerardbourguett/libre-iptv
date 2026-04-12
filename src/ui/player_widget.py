@@ -30,7 +30,7 @@ class PlayerWidget(QFrame):
     def set_active(self, active: bool) -> None:
         if active:
             self.setStyleSheet(
-                "background-color: black; border: 2px solid #0d6efd;"
+                "background-color: black; border: 2px solid #00bcd4;"
             )
         else:
             self.setStyleSheet("background-color: black;")

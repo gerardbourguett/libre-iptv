@@ -94,6 +94,7 @@ class MainWindow(QMainWindow):
         self._build_layout_toolbar()
 
         self._channel_list.channel_selected.connect(self._on_channel_selected)
+        self._grid.active_cell_changed.connect(self._on_active_cell_changed)
 
         self._settings = AppSettings()
         self._restore_settings()
@@ -102,26 +103,36 @@ class MainWindow(QMainWindow):
         toolbar = QToolBar("Layout")
         toolbar.setMovable(False)
         toolbar.setObjectName("layout_toolbar")
+        toolbar.setStyleSheet(
+            "QToolBar { background: #0d0d0d;"
+            " border-bottom: 1px solid #1e1e1e;"
+            " spacing: 4px; padding: 4px 8px; }"
+            "QToolButton { background: #1e1e1e; color: #9e9e9e;"
+            " border: 1px solid #2a2a2a; border-radius: 6px;"
+            " padding: 4px 14px; font-size: 13px; }"
+            "QToolButton:hover { background: #262626; color: #e0e0e0; }"
+            "QToolButton:checked { background: #00bcd4;"
+            " color: #000000; border-color: #00bcd4; }"
+        )
 
-        btn_single = QToolButton()
-        btn_single.setText("⬜ 1")
-        btn_single.setToolTip("Single view")
-        btn_single.clicked.connect(lambda: self._grid.set_mode(1))
+        self._layout_buttons: dict[int, QToolButton] = {}
+        _modes = [(1, "⬜  1", "Single"), (2, "⬛  2", "Dual"), (4, "▦  4", "Quad")]
+        for mode, label, tip in _modes:
+            btn = QToolButton()
+            btn.setText(label)
+            btn.setToolTip(f"{tip} view")
+            btn.setCheckable(True)
+            btn.clicked.connect(lambda checked, m=mode: self._set_layout_mode(m))
+            toolbar.addWidget(btn)
+            self._layout_buttons[mode] = btn
 
-        btn_dual = QToolButton()
-        btn_dual.setText("⬛ 2")
-        btn_dual.setToolTip("Dual view")
-        btn_dual.clicked.connect(lambda: self._grid.set_mode(2))
-
-        btn_quad = QToolButton()
-        btn_quad.setText("▦ 4")
-        btn_quad.setToolTip("Quad view")
-        btn_quad.clicked.connect(lambda: self._grid.set_mode(4))
-
-        toolbar.addWidget(btn_single)
-        toolbar.addWidget(btn_dual)
-        toolbar.addWidget(btn_quad)
+        self._layout_buttons[1].setChecked(True)
         self.addToolBar(toolbar)
+
+    def _set_layout_mode(self, mode: int) -> None:
+        self._grid.set_mode(mode)
+        for m, btn in self._layout_buttons.items():
+            btn.setChecked(m == mode)
 
     def _restore_settings(self) -> None:
         geometry = self._settings.load_geometry()
@@ -194,6 +205,12 @@ class MainWindow(QMainWindow):
         status_bar = self.statusBar()
         assert status_bar is not None
         status_bar.showMessage(f"Error: {message}")
+
+    def _on_active_cell_changed(self, index: int) -> None:  # noqa: ARG002
+        volume = self._grid.active_player().get_volume()
+        self._control_bar.volume_slider.blockSignals(True)
+        self._control_bar.volume_slider.setValue(volume)
+        self._control_bar.volume_slider.blockSignals(False)
 
     def _on_channel_selected(self, channel: Channel) -> None:
         self._grid.play_in_active(channel.url)

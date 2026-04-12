@@ -64,8 +64,20 @@ def parse_m3u_file(path: str | Path) -> list[Channel]:
     return parse_m3u(content)
 
 
+_REQUEST_HEADERS = {
+    "User-Agent": (
+        "Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
+        "AppleWebKit/537.36 (KHTML, like Gecko) "
+        "Chrome/124.0.0.0 Safari/537.36"
+    ),
+    "Accept": "*/*",
+    "Accept-Language": "en-US,en;q=0.9",
+}
+
+
 def parse_m3u_url(url: str) -> list[Channel]:
     """Fetch an M3U playlist from a URL and parse it."""
-    with urllib.request.urlopen(url) as response:
+    req = urllib.request.Request(url, headers=_REQUEST_HEADERS)
+    with urllib.request.urlopen(req, timeout=15) as response:
         content = response.read().decode("utf-8")
     return parse_m3u(content)

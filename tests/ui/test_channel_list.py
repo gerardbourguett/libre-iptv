@@ -207,11 +207,19 @@ class TestChannelListStyling:
         """ChannelListWidget applies a stylesheet."""
         assert len(widget.styleSheet()) > 0
 
+    def test_search_focus_uses_cyan_accent(self, qtbot):
+        """Search bar focus border uses the cyan accent color."""
+        panel = ChannelListPanel()
+        qtbot.addWidget(panel)
+        from PyQt6.QtWidgets import QLineEdit
+        search = panel.findChild(QLineEdit)
+        assert "00bcd4" in search.styleSheet()
+
     def test_header_has_muted_foreground(self, widget, news_sports_channels):
-        """Category headers use muted grey foreground #888888."""
+        """Category headers use muted grey foreground #9e9e9e."""
         widget.load_channels(news_sports_channels)
         header = widget.item(0)
-        assert header.foreground().color().name() == "#888888"
+        assert header.foreground().color().name() == "#9e9e9e"
 
     def test_channel_item_has_indent(self, widget, news_sports_channels):
         """Channel items have a leading 2-space indent."""

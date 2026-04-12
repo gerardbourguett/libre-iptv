@@ -187,6 +187,16 @@ class TestSettingsIntegration:
         mock_settings.save_last_playlist.assert_called_once_with("/home/user/playlist.m3u")
 
 
+class TestVolumeSync:
+    def test_active_cell_change_syncs_volume_slider(self, window, mock_vlc):
+        """Switching active cell updates the volume slider to that cell's volume."""
+        _, player = mock_vlc
+        player.audio_get_volume.return_value = 60
+        window._grid.set_mode(4)
+        window._grid._on_cell_clicked(1)
+        assert window._control_bar.volume_slider.value() == 60
+
+
 class TestLayoutSwitcher:
     def test_window_has_grid_attribute(self, window):
         """MainWindow exposes _grid (GridPlayerWidget)."""

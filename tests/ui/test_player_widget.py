@@ -73,9 +73,9 @@ class TestPlayerWidgetSignals:
             widget.mousePressEvent(event)
 
     def test_set_active_true_sets_border_stylesheet(self, widget, mock_vlc):
-        """set_active(True) adds a blue border to the widget."""
+        """set_active(True) adds a cyan border to the widget."""
         widget.set_active(True)
-        assert "0d6efd" in widget.styleSheet()
+        assert "00bcd4" in widget.styleSheet()
 
     def test_set_active_false_clears_border(self, widget, mock_vlc):
         """set_active(False) removes the active border."""

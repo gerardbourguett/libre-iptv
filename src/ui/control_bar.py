@@ -1,6 +1,12 @@
 from PyQt6.QtCore import Qt, pyqtSignal
 from PyQt6.QtWidgets import QHBoxLayout, QLabel, QPushButton, QSlider, QWidget
 
+_ACCENT = "#00bcd4"
+_SURFACE = "#1a1a1a"
+_ELEVATED = "#262626"
+_BORDER = "#2a2a2a"
+_TEXT = "#e0e0e0"
+
 
 class ControlBarWidget(QWidget):
     volume_changed = pyqtSignal(int)
@@ -10,26 +16,42 @@ class ControlBarWidget(QWidget):
     def __init__(self, parent: QWidget | None = None) -> None:
         super().__init__(parent)
         self._muted = False
-        self.setStyleSheet(
-            "ControlBarWidget { background: #1e1e1e; border-top: 1px solid #3a3a3a; }"
-            "QPushButton { background: #2d2d2d; color: #e0e0e0; "
-            "border: 1px solid #3a3a3a; border-radius: 4px; padding: 4px 12px; }"
-            "QPushButton:hover { background: #3a3a3a; }"
-            "QPushButton:pressed { background: #0d6efd; }"
+        _qss = (
+            f"ControlBarWidget {{ background: {_SURFACE};"
+            f" border-top: 1px solid {_BORDER}; }}"
+            f"QPushButton {{ background: {_ELEVATED}; color: {_TEXT};"
+            f" border: 1px solid {_BORDER}; border-radius: 6px;"
+            f" padding: 6px 16px; font-size: 13px; }}"
+            f"QPushButton:hover {{ background: #333333;"
+            f" border-color: {_ACCENT}; }}"
+            f"QPushButton:pressed {{ background: {_ACCENT}; color: #000000; }}"
+            "QSlider::groove:horizontal { height: 4px;"
+            " background: #2a2a2a; border-radius: 2px; }"
+            f"QSlider::sub-page:horizontal {{ background: {_ACCENT};"
+            " border-radius: 2px; }"
+            "QSlider::handle:horizontal { width: 14px; height: 14px;"
+            " margin: -5px 0; border-radius: 7px; background: #ffffff; }"
         )
+        self.setStyleSheet(_qss)
+
+        vol_icon = QLabel("🔊")
+        vol_icon.setStyleSheet(f"color: {_TEXT}; font-size: 16px; padding: 0 4px;")
 
         self.volume_slider = QSlider(Qt.Orientation.Horizontal)
         self.volume_slider.setRange(0, 100)
         self.volume_slider.setValue(100)
-        self.volume_slider.setFixedWidth(120)
+        self.volume_slider.setFixedWidth(160)
+        self.volume_slider.setToolTip("Volume")
 
         self.mute_btn = QPushButton("🔇 Mute")
         self.stop_btn = QPushButton("■ Stop")
 
         layout = QHBoxLayout(self)
-        layout.setContentsMargins(4, 2, 4, 2)
-        layout.addWidget(QLabel("Vol:"))
+        layout.setContentsMargins(12, 0, 12, 0)
+        layout.setSpacing(8)
+        layout.addWidget(vol_icon)
         layout.addWidget(self.volume_slider)
+        layout.addSpacing(8)
         layout.addWidget(self.mute_btn)
         layout.addWidget(self.stop_btn)
         layout.addStretch()
@@ -37,7 +59,7 @@ class ControlBarWidget(QWidget):
         self.volume_slider.valueChanged.connect(self.volume_changed.emit)
         self.mute_btn.clicked.connect(self._on_mute_clicked)
         self.stop_btn.clicked.connect(self.stop_requested.emit)
-        self.setFixedHeight(48)
+        self.setFixedHeight(56)
 
     def _on_mute_clicked(self) -> None:
         self._muted = not self._muted

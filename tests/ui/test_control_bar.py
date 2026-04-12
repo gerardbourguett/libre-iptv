@@ -20,8 +20,11 @@ class TestControlBarInitialState:
     def test_stop_button_text_is_stop(self, bar):
         assert bar.stop_btn.text() == "■ Stop"
 
-    def test_control_bar_has_fixed_height_48(self, bar):
-        assert bar.height() == 48
+    def test_control_bar_has_fixed_height(self, bar):
+        assert bar.height() == 56
+
+    def test_volume_slider_is_wider(self, bar):
+        assert bar.volume_slider.minimumWidth() >= 150
 
 
 class TestControlBarSignals:

@@ -29,10 +29,10 @@ class ChannelListWidget(QListWidget):
         self._collapsed_groups: set[str] = set()
         self._current_query: str = ""
         self.setStyleSheet(
-            "QListWidget { border: none; background: #252525; outline: none; }"
-            "QListWidget::item { padding: 4px 8px; color: #e0e0e0; }"
-            "QListWidget::item:selected { background: #0d6efd; color: #ffffff; }"
-            "QListWidget::item:hover:!selected { background: #3a3a3a; }"
+            "QListWidget { border: none; background: #161616; outline: none; }"
+            "QListWidget::item { padding: 8px 12px; color: #e0e0e0; min-height: 24px; }"
+            "QListWidget::item:selected { background: #00bcd4; color: #000000; }"
+            "QListWidget::item:hover:!selected { background: #222222; }"
         )
         self.itemClicked.connect(self._on_item_clicked)
 
@@ -56,8 +56,8 @@ class ChannelListWidget(QListWidget):
         font = QFont()
         font.setBold(True)
         item.setFont(font)
-        item.setForeground(QColor("#888888"))
-        item.setBackground(QColor("#1a1a2e"))
+        item.setForeground(QColor("#9e9e9e"))
+        item.setBackground(QColor("#0d0d0d"))
         item.setData(Qt.ItemDataRole.UserRole, _GroupHeader(name=text, count=count))
         self.addItem(item)
 
@@ -123,9 +123,10 @@ class ChannelListPanel(QWidget):
         self._search = QLineEdit()
         self._search.setPlaceholderText("Search channels\u2026")
         self._search.setStyleSheet(
-            "QLineEdit { background: #2d2d2d; color: #e0e0e0; "
-            "border: 1px solid #3a3a3a; border-radius: 4px; padding: 4px 8px; }"
-            "QLineEdit:focus { border-color: #0d6efd; }"
+            "QLineEdit { background: #1e1e1e; color: #e0e0e0; "
+            "border: 1px solid #2a2a2a; border-radius: 6px; padding: 8px 12px; "
+            "font-size: 13px; }"
+            "QLineEdit:focus { border-color: #00bcd4; }"
         )
         self.channel_list = ChannelListWidget()
 

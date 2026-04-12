@@ -85,6 +85,34 @@ class TestParseM3uString:
 
 
 class TestParseM3uUrl:
+    def _mock_response(self, content: str):
+        from unittest.mock import MagicMock
+        mock = MagicMock()
+        mock.read.return_value = content.encode("utf-8")
+        mock.__enter__ = lambda s: s
+        mock.__exit__ = MagicMock(return_value=False)
+        return mock
+
+    def test_parse_m3u_url_sends_user_agent(self):
+        """parse_m3u_url must include a User-Agent header to avoid 403s."""
+        from urllib.request import Request
+        m3u = "#EXTM3U\n#EXTINF:-1,Test\nhttp://test\n"
+        with patch("urllib.request.urlopen", return_value=self._mock_response(m3u)) as mock_open:
+            from src.parser.m3u import parse_m3u_url
+            parse_m3u_url("http://example.com/playlist.m3u")
+        request = mock_open.call_args[0][0]
+        assert isinstance(request, Request)
+        assert request.get_header("User-agent") is not None
+
+    def test_parse_m3u_url_uses_timeout(self):
+        """parse_m3u_url must pass a timeout to urlopen."""
+        m3u = "#EXTM3U\n#EXTINF:-1,Test\nhttp://test\n"
+        with patch("urllib.request.urlopen", return_value=self._mock_response(m3u)) as mock_open:
+            from src.parser.m3u import parse_m3u_url
+            parse_m3u_url("http://example.com/playlist.m3u")
+        call_kwargs = mock_open.call_args[1]
+        assert call_kwargs.get("timeout") is not None
+
     def test_parse_m3u_url_fetches_and_parses(self):
         m3u_content = "#EXTM3U\n#EXTINF:-1,Test Channel\nhttp://stream.test/live\n"
         mock_response = MagicMock()
