@@ -1,6 +1,7 @@
 import sys
 
-from PyQt6.QtGui import QColor, QFont, QPalette
+from PyQt6.QtCore import Qt
+from PyQt6.QtGui import QColor, QCursor, QFont, QPalette
 from PyQt6.QtWidgets import QApplication
 
 from src.profiles.manager import ProfileManager
@@ -41,6 +42,11 @@ def main() -> None:
 
     chooser = ProfileChooserDialog(manager)
     chooser.exec()
+    # On Windows, closing a modal dialog that contained a widget with
+    # PointingHandCursor can leave the cursor "stuck" until the next
+    # mouseMoveEvent. Push + immediately pop an override to force a reset.
+    QApplication.setOverrideCursor(QCursor(Qt.CursorShape.ArrowCursor))
+    QApplication.restoreOverrideCursor()
 
     window = MainWindow(manager)
     window.show()
