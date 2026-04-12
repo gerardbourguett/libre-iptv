@@ -1,0 +1,7 @@
+#EXTM3U
+#EXTINF:-1 tvg-id="cnn" tvg-name="CNN" tvg-logo="http://logos.example.com/cnn.png" group-title="News",CNN International
+http://stream.example.com/cnn/index.m3u8
+#EXTINF:-1 tvg-id="bbc" tvg-name="BBC World" tvg-logo="http://logos.example.com/bbc.png" group-title="News",BBC World News
+rtsp://stream.example.com/bbc/live
+#EXTINF:-1 tvg-id="espn" tvg-name="ESPN" tvg-logo="http://logos.example.com/espn.png" group-title="Sports",ESPN HD
+http://stream.example.com/espn?token=abc123&quality=hd

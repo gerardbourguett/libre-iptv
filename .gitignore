@@ -1,0 +1,50 @@
+# Entorno virtual
+.venv/
+venv/
+ENV/
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+
+# Distribución / empaquetado
+dist/
+build/
+*.egg-info/
+*.egg
+
+# Pruebas y cobertura
+.pytest_cache/
+.coverage
+.coverage.*
+htmlcov/
+
+# Caché de herramientas
+.mypy_cache/
+.ruff_cache/
+
+# Configuración guardada por QSettings (almacenada en AppData, no en el proyecto)
+# Incluida por precaución ante cualquier .ini generado localmente
+*.ini
+
+# Herramientas SDD / agentes
+.agents/
+.atl/
+openspec/
+skills-lock.json
+
+# Configuración de Claude Code (usuario)
+.claude/
+
+# Editores e IDEs
+.vscode/
+.idea/
+*.sublime-project
+*.sublime-workspace
+
+# Sistema operativo
+.DS_Store
+Thumbs.db
+desktop.ini

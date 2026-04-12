@@ -1,0 +1,4 @@
+#EXTINF:-1,Simple Channel
+http://stream.example.com/simple
+#EXTINF:-1 group-title="Movies",Movie Channel
+http://stream.example.com/movies

@@ -1,0 +1,6 @@
+# Normalizar line endings a LF en el repositorio
+* text=auto eol=lf
+
+# Binarios
+*.pyc binary
+*.pyd binary

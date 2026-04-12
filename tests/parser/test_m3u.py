@@ -1,0 +1,137 @@
+from pathlib import Path
+from unittest.mock import MagicMock, patch
+
+import pytest
+
+from src.parser.m3u import parse_m3u, parse_m3u_file
+
+FIXTURES = Path(__file__).parent / "fixtures"
+
+
+class TestParseM3uString:
+    def test_valid_playlist_returns_all_channels(self) -> None:
+        """S1: 3 channels from valid M3U."""
+        content = (FIXTURES / "valid.m3u").read_text(encoding="utf-8")
+        channels = parse_m3u(content)
+        assert len(channels) == 3
+
+    def test_full_attributes_parsed(self) -> None:
+        """S2: All EXTINF attributes extracted correctly."""
+        content = (
+            "#EXTM3U\n"
+            '#EXTINF:-1 tvg-id="cnn" tvg-name="CNN" tvg-logo="http://logo/cnn.png"'
+            ' group-title="News",CNN International\n'
+            "http://stream.example.com/cnn\n"
+        )
+        channels = parse_m3u(content)
+        assert len(channels) == 1
+        ch = channels[0]
+        assert ch.tvg_id == "cnn"
+        assert ch.tvg_name == "CNN"
+        assert ch.tvg_logo == "http://logo/cnn.png"
+        assert ch.group == "News"
+        assert ch.name == "CNN International"
+        assert ch.url == "http://stream.example.com/cnn"
+
+    def test_missing_optional_attributes(self) -> None:
+        """S3: Missing attributes default to empty string."""
+        content = "#EXTINF:-1,Simple Channel\nrtsp://stream.example.com/simple\n"
+        channels = parse_m3u(content)
+        assert len(channels) == 1
+        ch = channels[0]
+        assert ch.name == "Simple Channel"
+        assert ch.url == "rtsp://stream.example.com/simple"
+        assert ch.tvg_id == ""
+        assert ch.tvg_name == ""
+        assert ch.tvg_logo == ""
+        assert ch.group == ""
+
+    def test_no_extm3u_header(self) -> None:
+        """S4: Header is optional."""
+        content = (FIXTURES / "no_header.m3u").read_text(encoding="utf-8")
+        channels = parse_m3u(content)
+        assert len(channels) == 2
+
+    def test_empty_string(self) -> None:
+        """S5: Empty string returns empty list."""
+        assert parse_m3u("") == []
+
+    def test_malformed_entry_skipped(self) -> None:
+        """S6: Malformed entries skipped, valid ones returned."""
+        content = (FIXTURES / "malformed.m3u").read_text(encoding="utf-8")
+        channels = parse_m3u(content)
+        assert len(channels) == 2
+        assert channels[0].name == "Good Channel"
+        assert channels[1].name == "Another Good Channel"
+
+    def test_blank_lines_ignored(self) -> None:
+        """S7: Blank lines between entries handled."""
+        content = (
+            "#EXTM3U\n\n"
+            "#EXTINF:-1,Channel A\n\n"
+            "http://stream.example.com/a\n\n"
+            "#EXTINF:-1,Channel B\n\n"
+            "http://stream.example.com/b\n"
+        )
+        channels = parse_m3u(content)
+        assert len(channels) == 2
+
+    def test_url_with_query_params(self) -> None:
+        """S8: URLs with query parameters preserved."""
+        url = "http://stream.example.com/live?token=abc123&quality=hd"
+        content = f"#EXTINF:-1,HD Channel\n{url}\n"
+        channels = parse_m3u(content)
+        assert channels[0].url == url
+
+
+class TestParseM3uUrl:
+    def test_parse_m3u_url_fetches_and_parses(self):
+        m3u_content = "#EXTM3U\n#EXTINF:-1,Test Channel\nhttp://stream.test/live\n"
+        mock_response = MagicMock()
+        mock_response.read.return_value = m3u_content.encode("utf-8")
+        mock_response.__enter__ = lambda s: s
+        mock_response.__exit__ = MagicMock(return_value=False)
+
+        with patch("urllib.request.urlopen", return_value=mock_response):
+            from src.parser.m3u import parse_m3u_url
+            channels = parse_m3u_url("http://example.com/playlist.m3u")
+
+        assert len(channels) == 1
+        assert channels[0].name == "Test Channel"
+        assert channels[0].url == "http://stream.test/live"
+
+    def test_parse_m3u_url_raises_on_network_error(self):
+        with patch("urllib.request.urlopen", side_effect=OSError("Network error")):
+            from src.parser.m3u import parse_m3u_url
+            with pytest.raises(OSError):
+                parse_m3u_url("http://bad.example.com/playlist.m3u")
+
+
+class TestParseM3uFile:
+    def test_valid_file(self) -> None:
+        """S1: Parse existing valid M3U file."""
+        channels = parse_m3u_file(FIXTURES / "valid.m3u")
+        assert len(channels) == 3
+
+    def test_file_not_found(self) -> None:
+        """S2: FileNotFoundError for missing file."""
+        with pytest.raises(FileNotFoundError):
+            parse_m3u_file("/nonexistent/path/playlist.m3u")
+
+    def test_accepts_str_and_path(self) -> None:
+        """S3: Both str and Path inputs work identically."""
+        path = FIXTURES / "valid.m3u"
+        from_path = parse_m3u_file(path)
+        from_str = parse_m3u_file(str(path))
+        assert from_path == from_str
+
+    def test_utf8_encoding(self) -> None:
+        """S4: UTF-8 channel names decoded correctly."""
+        content = "#EXTINF:-1,Türkçe Kanal\nhttp://stream.example.com/tr\n"
+        tmp = FIXTURES / "utf8_test.m3u"
+        tmp.write_text(content, encoding="utf-8")
+        try:
+            channels = parse_m3u_file(tmp)
+            assert channels[0].name == "Türkçe Kanal"
+        finally:
+            tmp.unlink()

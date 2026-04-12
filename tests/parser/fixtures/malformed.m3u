@@ -1,0 +1,6 @@
+#EXTM3U
+#EXTINF:-1 tvg-id="good" tvg-name="Good Channel" group-title="Test",Good Channel
+http://stream.example.com/good
+#EXTINF:-1,Bad Channel With No URL
+#EXTINF:-1 group-title="Test",Another Good Channel
+http://stream.example.com/another
