@@ -16,6 +16,7 @@ from PyQt6.QtWidgets import (
     QWidget,
 )
 
+from src.i18n import t
 from src.models.profile import AVATAR_COLORS, Profile
 from src.profiles.manager import ProfileManager
 
@@ -157,7 +158,7 @@ class ProfileChooserDialog(QDialog):
         super().__init__(parent)
         self._manager = manager
         self._selected_profile: Profile | None = None
-        self.setWindowTitle("IPTV Player")
+        self.setWindowTitle(t("app.title"))
         self.setMinimumWidth(440)
         self.setStyleSheet(_STYLE)
         self.setWindowFlags(
@@ -203,7 +204,7 @@ class ProfileChooserDialog(QDialog):
         layout.setContentsMargins(32, 32, 32, 32)
         layout.setSpacing(16)
 
-        title = QLabel("¿Quién eres?")
+        title = QLabel(t("profile_chooser.title"))
         title.setStyleSheet("font-size: 22px; font-weight: bold; color: #e0e0e0;")
         title.setAlignment(Qt.AlignmentFlag.AlignCenter)
         layout.addWidget(title)
@@ -226,7 +227,7 @@ class ProfileChooserDialog(QDialog):
         scroll.setWidget(contents)
         layout.addWidget(scroll)
 
-        new_btn = QPushButton("+ Agregar perfil")
+        new_btn = QPushButton(t("profile_chooser.add_profile"))
         new_btn.setObjectName("new_profile")
         new_btn.clicked.connect(self._show_create_form)
         layout.addWidget(new_btn, alignment=Qt.AlignmentFlag.AlignCenter)
@@ -240,22 +241,22 @@ class ProfileChooserDialog(QDialog):
         layout.setContentsMargins(40, 40, 40, 40)
         layout.setSpacing(18)
 
-        title = QLabel("Bienvenido a IPTV Player")
+        title = QLabel(t("welcome.title"))
         title.setStyleSheet("font-size: 20px; font-weight: bold; color: #e0e0e0;")
         title.setAlignment(Qt.AlignmentFlag.AlignCenter)
         layout.addWidget(title)
 
-        sub = QLabel("Crea tu primer perfil para comenzar.")
+        sub = QLabel(t("welcome.subtitle"))
         sub.setStyleSheet("color: #888; font-size: 13px;")
         sub.setAlignment(Qt.AlignmentFlag.AlignCenter)
         layout.addWidget(sub)
 
         self._name_input = QLineEdit()
-        self._name_input.setPlaceholderText("Nombre del perfil")
+        self._name_input.setPlaceholderText(t("welcome.name_placeholder"))
         self._name_input.setMaxLength(24)
         layout.addWidget(self._name_input)
 
-        color_lbl = QLabel("Color de avatar:")
+        color_lbl = QLabel(t("welcome.color_label"))
         color_lbl.setStyleSheet("color: #9e9e9e; font-size: 12px;")
         layout.addWidget(color_lbl)
         self._color_picker = _ColorPicker(AVATAR_COLORS[0])
@@ -265,7 +266,7 @@ class ProfileChooserDialog(QDialog):
         spacer.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Expanding)
         layout.addWidget(spacer)
 
-        self._create_btn = QPushButton("Comenzar")
+        self._create_btn = QPushButton(t("welcome.start_button"))
         self._create_btn.setObjectName("primary")
         self._create_btn.setEnabled(False)
         self._create_btn.clicked.connect(self._on_create)
@@ -290,7 +291,7 @@ class ProfileChooserDialog(QDialog):
         self._build_create_view()
 
     def _on_create(self) -> None:
-        name = self._name_input.text().strip() or "Mi Perfil"
+        name = self._name_input.text().strip() or t("profile.default_name")
         color = self._color_picker.selected
         profile = self._manager.create_profile(name, color)
         self._selected_profile = profile

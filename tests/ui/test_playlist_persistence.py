@@ -75,7 +75,7 @@ class TestPlaylistPersistence:
         with patch(
             "src.ui.main_window.QInputDialog.getText",
             return_value=("http://example.com/list.m3u", True),
-        ), patch("src.ui.main_window.PlaylistFetchWorker") as MockWorker:
+        ), patch("src.services.playlist_service.PlaylistFetchWorker") as MockWorker:
             instance = MagicMock()
             MockWorker.return_value = instance
             instance.fetched = MagicMock()

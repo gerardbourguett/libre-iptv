@@ -4,7 +4,10 @@ import json
 import uuid
 from pathlib import Path
 
+from src.core.parental import hash_pin, verify_pin
+from src.models.channel import Channel
 from src.models.profile import Profile
+from src.platform import get_config_dir
 
 _INDEX_FILE = "index.json"
 _MAX_RECENT = 20
@@ -15,7 +18,7 @@ class ProfileManager:
 
     def __init__(self, base_dir: Path | None = None) -> None:
         if base_dir is None:
-            base_dir = Path.home() / ".config" / "iptv-player" / "profiles"
+            base_dir = get_config_dir() / "profiles"
         self._dir = base_dir
         self._dir.mkdir(parents=True, exist_ok=True)
         self._profiles: dict[str, Profile] = {}
@@ -83,6 +86,9 @@ class ProfileManager:
             favorites=profile.favorites,
             recent=recent[:_MAX_RECENT],
             last_channel_url=channel_url,
+            pin_hash=profile.pin_hash,
+            blocked=profile.blocked,
+            epg_url=profile.epg_url,
         )
 
     def toggle_favorite(self, channel_url: str) -> bool:
@@ -102,6 +108,9 @@ class ProfileManager:
             favorites=favorites,
             recent=profile.recent,
             last_channel_url=profile.last_channel_url,
+            pin_hash=profile.pin_hash,
+            blocked=profile.blocked,
+            epg_url=profile.epg_url,
         )
         return added
 
@@ -119,6 +128,173 @@ class ProfileManager:
             favorites=profile.favorites,
             recent=profile.recent,
             last_channel_url=profile.last_channel_url,
+            pin_hash=profile.pin_hash,
+            blocked=profile.blocked,
+            epg_url=profile.epg_url,
+        )
+
+    def update_epg_url(self, profile_id: str, url: str) -> None:
+        profile = self._profiles[profile_id]
+        self._profiles[profile_id] = Profile(
+            id=profile.id,
+            name=profile.name,
+            color=profile.color,
+            playlist_url=profile.playlist_url,
+            playlist_path=profile.playlist_path,
+            favorites=profile.favorites,
+            recent=profile.recent,
+            last_channel_url=profile.last_channel_url,
+            pin_hash=profile.pin_hash,
+            blocked=profile.blocked,
+            epg_url=url,
+        )
+        self._write_profile(self._profiles[profile_id])
+
+    # ------------------------------------------------------------------
+    # Parental controls
+    # ------------------------------------------------------------------
+
+    def set_pin(self, pin: str) -> None:
+        """Store a salted hash of the 4-digit PIN on the active profile."""
+        profile = self._profiles[self._active_id]
+        self._profiles[self._active_id] = Profile(
+            id=profile.id,
+            name=profile.name,
+            color=profile.color,
+            playlist_url=profile.playlist_url,
+            playlist_path=profile.playlist_path,
+            favorites=profile.favorites,
+            recent=profile.recent,
+            last_channel_url=profile.last_channel_url,
+            pin_hash=hash_pin(pin),
+            blocked=profile.blocked,
+            epg_url=profile.epg_url,
+        )
+        self._write_profile(self._profiles[self._active_id])
+
+    def remove_pin(self) -> None:
+        """Clear the PIN hash and blocklist from the active profile."""
+        profile = self._profiles[self._active_id]
+        self._profiles[self._active_id] = Profile(
+            id=profile.id,
+            name=profile.name,
+            color=profile.color,
+            playlist_url=profile.playlist_url,
+            playlist_path=profile.playlist_path,
+            favorites=profile.favorites,
+            recent=profile.recent,
+            last_channel_url=profile.last_channel_url,
+            pin_hash="",
+            blocked={},
+            epg_url=profile.epg_url,
+        )
+        self._write_profile(self._profiles[self._active_id])
+
+    def verify_pin(self, pin: str) -> bool:
+        """Verify a PIN against the active profile's stored hash."""
+        return verify_pin(pin, self._profiles[self._active_id].pin_hash)
+
+    def block_channel(self, url: str) -> None:
+        """Add a channel URL to the active profile's blocklist."""
+        profile = self._profiles[self._active_id]
+        blocked = dict(profile.blocked)
+        channels = list(blocked.get("channels", []))
+        if url not in channels:
+            channels.append(url)
+        blocked["channels"] = channels
+        self._profiles[self._active_id] = Profile(
+            id=profile.id,
+            name=profile.name,
+            color=profile.color,
+            playlist_url=profile.playlist_url,
+            playlist_path=profile.playlist_path,
+            favorites=profile.favorites,
+            recent=profile.recent,
+            last_channel_url=profile.last_channel_url,
+            pin_hash=profile.pin_hash,
+            blocked=blocked,
+            epg_url=profile.epg_url,
+        )
+        self._write_profile(self._profiles[self._active_id])
+
+    def unblock_channel(self, url: str) -> None:
+        """Remove a channel URL from the active profile's blocklist."""
+        profile = self._profiles[self._active_id]
+        blocked = dict(profile.blocked)
+        channels = [u for u in blocked.get("channels", []) if u != url]
+        if channels:
+            blocked["channels"] = channels
+        else:
+            blocked.pop("channels", None)
+        self._profiles[self._active_id] = Profile(
+            id=profile.id,
+            name=profile.name,
+            color=profile.color,
+            playlist_url=profile.playlist_url,
+            playlist_path=profile.playlist_path,
+            favorites=profile.favorites,
+            recent=profile.recent,
+            last_channel_url=profile.last_channel_url,
+            pin_hash=profile.pin_hash,
+            blocked=blocked,
+            epg_url=profile.epg_url,
+        )
+        self._write_profile(self._profiles[self._active_id])
+
+    def block_group(self, name: str) -> None:
+        """Add a group name to the active profile's blocklist."""
+        profile = self._profiles[self._active_id]
+        blocked = dict(profile.blocked)
+        groups = list(blocked.get("groups", []))
+        if name not in groups:
+            groups.append(name)
+        blocked["groups"] = groups
+        self._profiles[self._active_id] = Profile(
+            id=profile.id,
+            name=profile.name,
+            color=profile.color,
+            playlist_url=profile.playlist_url,
+            playlist_path=profile.playlist_path,
+            favorites=profile.favorites,
+            recent=profile.recent,
+            last_channel_url=profile.last_channel_url,
+            pin_hash=profile.pin_hash,
+            blocked=blocked,
+            epg_url=profile.epg_url,
+        )
+        self._write_profile(self._profiles[self._active_id])
+
+    def unblock_group(self, name: str) -> None:
+        """Remove a group name from the active profile's blocklist."""
+        profile = self._profiles[self._active_id]
+        blocked = dict(profile.blocked)
+        groups = [g for g in blocked.get("groups", []) if g != name]
+        if groups:
+            blocked["groups"] = groups
+        else:
+            blocked.pop("groups", None)
+        self._profiles[self._active_id] = Profile(
+            id=profile.id,
+            name=profile.name,
+            color=profile.color,
+            playlist_url=profile.playlist_url,
+            playlist_path=profile.playlist_path,
+            favorites=profile.favorites,
+            recent=profile.recent,
+            last_channel_url=profile.last_channel_url,
+            pin_hash=profile.pin_hash,
+            blocked=blocked,
+            epg_url=profile.epg_url,
+        )
+        self._write_profile(self._profiles[self._active_id])
+
+    def is_channel_blocked(self, channel: Channel) -> bool:
+        """Return True if the channel URL or its group is blocked."""
+        profile = self._profiles[self._active_id]
+        blocked = profile.blocked
+        return (
+            channel.url in blocked.get("channels", [])
+            or channel.group in blocked.get("groups", [])
         )
 
     # ------------------------------------------------------------------

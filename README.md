@@ -1,6 +1,9 @@
 # IPTV Player
 
-Reproductor de IPTV de escritorio gratuito y de código abierto para Windows. Permite cargar listas de reproducción M3U desde archivos locales o URLs remotas y reproducir canales de streaming con VLC embebido.
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
+[![Python 3.12+](https://img.shields.io/badge/python-3.12+-blue.svg)](https://www.python.org)
+
+Reproductor de IPTV de escritorio gratuito y de código abierto para Windows, macOS y Linux. Permite cargar listas de reproducción M3U desde archivos locales o URLs remotas y reproducir canales de streaming con VLC embebido.
 
 ## Características
 
@@ -36,9 +39,19 @@ Reproductor de IPTV de escritorio gratuito y de código abierto para Windows. Pe
 |-----------|----------------|
 | Python | 3.12 |
 | VLC Media Player | 3.x |
-| Sistema operativo | Windows 10 / 11 |
+| Windows | 10 / 11 |
+| macOS | 12+ |
+| Linux | Ubuntu 22.04+ / Debian 12+ |
 
 VLC debe estar instalado en el sistema antes de ejecutar la aplicación. Descarga disponible en [videolan.org](https://www.videolan.org/).
+
+**Instalación rápida de VLC**
+
+| Plataforma | Comando |
+|------------|---------|
+| Windows (Chocolatey) | `choco install vlc` |
+| macOS (Homebrew) | `brew install --cask vlc` |
+| Linux (apt) | `sudo apt install vlc` |
 
 ## Instalación
 
@@ -122,6 +135,7 @@ iptv/
 │   │   └── profile.py         # Modelo de datos Profile y colores de avatar
 │   ├── parser/
 │   │   └── m3u.py             # Parser M3U con soporte de codificación y directivas intermedias
+│   ├── platform.py            # Abstracción cross-platform (paths, VLC, fuentes)
 │   ├── profiles/
 │   │   └── manager.py         # Gestión de perfiles con persistencia JSON
 │   └── ui/
@@ -151,6 +165,13 @@ iptv/
 | [pytest](https://pytest.org) + [pytest-qt](https://pytest-qt.readthedocs.io) | Pruebas |
 | [ruff](https://docs.astral.sh/ruff/) | Linting y formateo |
 | [mypy](https://mypy-lang.org) | Verificación de tipos estática |
+
+## Donaciones
+
+Si deseas apoyar el desarrollo de IPTV Player, puedes hacerlo a través de las siguientes plataformas:
+
+- [GitHub Sponsors](https://github.com/sponsors/gerardbourguett)
+- [Ko-fi](https://ko-fi.com/vanderfondi)
 
 ## Licencia
 

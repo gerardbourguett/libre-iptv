@@ -1,0 +1,699 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Libre IPTV — Developer Spec</title>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700;800&family=DM+Sans:wght@400;500;600&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet"/>
+<style>
+  :root {
+    --bg: #060810; --surface: #0c0e18; --elevated: #121522;
+    --border: rgba(255,255,255,0.06); --text: #e8eaf0;
+    --dim: rgba(232,234,240,0.35); --accent: #001999;
+    --red: #ff0019; --green: #2a9d8f; --yellow: #d4a017;
+  }
+  * { margin:0; padding:0; box-sizing:border-box; }
+  body { background: var(--bg); color: var(--text); font-family:'DM Sans',sans-serif; font-size:14px; line-height:1.7; }
+  h1,h2,h3,h4 { font-family:'Space Grotesk',sans-serif; }
+  code, pre, .mono { font-family:'JetBrains Mono',monospace; }
+  ::-webkit-scrollbar { width:4px; } ::-webkit-scrollbar-thumb { background:rgba(255,255,255,0.08); }
+  a { color: var(--accent); text-decoration:none; }
+
+  .layout { display:flex; min-height:100vh; }
+  .sidebar {
+    width: 240px; min-width:240px; position:sticky; top:0; height:100vh;
+    background: var(--surface); border-right:1px solid var(--border);
+    padding:24px 0; overflow-y:auto; font-family:'Space Grotesk',sans-serif;
+  }
+  .sidebar-logo {
+    padding: 0 20px 20px; border-bottom:1px solid var(--border); margin-bottom:16px;
+    font-size:15px; font-weight:800; color:var(--text); letter-spacing:-0.03em;
+  }
+  .sidebar-logo span { color:var(--accent); }
+  .sidebar-logo small {
+    display:block; font-size:8px; font-weight:600; letter-spacing:0.18em;
+    color:var(--dim); margin-top:3px; font-family:'JetBrains Mono',monospace;
+  }
+  .nav-section { padding:0 12px; margin-bottom:8px; }
+  .nav-label { font-size:9px; font-weight:700; color:var(--dim); letter-spacing:0.12em; padding:6px 8px; }
+  .nav-item {
+    display:flex; align-items:center; gap:8px; padding:8px 10px;
+    border-radius:0; font-size:12px; color:rgba(232,234,240,0.6);
+    cursor:pointer; transition:all 0.12s; border-left:2px solid transparent;
+  }
+  .nav-item:hover { background:rgba(255,255,255,0.03); color:var(--text); }
+  .nav-item.active { background:rgba(0,25,153,0.12); color:var(--accent); border-left:2px solid var(--accent); font-weight:600; }
+  .dot { width:6px; height:6px; border-radius:50%; flex-shrink:0; }
+
+  .content { flex:1; max-width:900px; padding:48px 56px; }
+  .section { margin-bottom:64px; }
+  .section-tag {
+    font-size:9px; font-weight:700; letter-spacing:0.15em; color:var(--dim);
+    font-family:'JetBrains Mono',monospace; margin-bottom:10px;
+  }
+  h2 { font-size:26px; font-weight:800; letter-spacing:-0.03em; margin-bottom:6px; }
+  h3 { font-size:16px; font-weight:700; margin:28px 0 12px; }
+  h4 { font-size:13px; font-weight:700; margin:20px 0 8px; color:var(--dim); letter-spacing:0.04em; font-family:'Space Grotesk',sans-serif; }
+  p { color:rgba(232,234,240,0.75); margin-bottom:12px; }
+  .lead { font-size:16px; color:rgba(232,234,240,0.7); line-height:1.6; }
+
+  .divider { height:1px; background:var(--border); margin:32px 0; }
+
+  /* Code blocks */
+  pre {
+    background: var(--elevated); border:1px solid var(--border);
+    border-left:3px solid var(--accent);
+    padding:20px 24px; overflow-x:auto; margin:16px 0;
+    font-size:12px; line-height:1.7;
+  }
+  .comment { color: rgba(232,234,240,0.28); }
+  .kw { color: #7c9aff; }
+  .str { color: #80ffab; }
+  .cls { color: #ffd166; }
+  .fn { color: #00d4ff; }
+  .num { color: #ff9f7c; }
+  .dec { color: #ff6b9d; }
+
+  /* Cards */
+  .card {
+    background:var(--elevated); border:1px solid var(--border);
+    padding:20px 24px; margin-bottom:12px;
+  }
+  .card-title { font-size:13px; font-weight:700; color:var(--text); margin-bottom:4px; font-family:'Space Grotesk',sans-serif; }
+  .card-desc { font-size:12px; color:var(--dim); }
+
+  /* Badges */
+  .badge {
+    display:inline-flex; align-items:center; gap:5px;
+    padding:2px 9px; font-size:10px; font-weight:700;
+    font-family:'JetBrains Mono',monospace; letter-spacing:0.04em;
+    border:1px solid; vertical-align:middle;
+  }
+  .badge-blue { background:rgba(0,25,153,0.15); color:#7c9aff; border-color:rgba(0,25,153,0.4); }
+  .badge-green { background:rgba(42,157,143,0.15); color:#2a9d8f; border-color:rgba(42,157,143,0.4); }
+  .badge-red { background:rgba(255,0,25,0.12); color:#ff5566; border-color:rgba(255,0,25,0.35); }
+  .badge-yellow { background:rgba(212,160,23,0.15); color:#d4a017; border-color:rgba(212,160,23,0.4); }
+
+  /* Tables */
+  table { width:100%; border-collapse:collapse; margin:16px 0; font-size:12px; }
+  th { text-align:left; padding:8px 14px; font-size:9px; font-weight:700; letter-spacing:0.1em; color:var(--dim); font-family:'JetBrains Mono',monospace; border-bottom:1px solid var(--border); }
+  td { padding:10px 14px; border-bottom:1px solid var(--border); color:rgba(232,234,240,0.75); vertical-align:top; }
+  td:first-child { color:var(--text); font-family:'JetBrains Mono',monospace; font-size:11px; font-weight:500; }
+  tr:hover td { background:rgba(255,255,255,0.015); }
+
+  /* Module cards grid */
+  .modules-grid { display:grid; grid-template-columns:repeat(2, 1fr); gap:10px; margin:16px 0; }
+  .module-card {
+    background:var(--elevated); border:1px solid var(--border);
+    padding:16px 18px; position:relative; overflow:hidden;
+  }
+  .module-card::before { content:''; position:absolute; top:0; left:0; width:100%; height:2px; background:var(--accent); }
+  .module-name { font-size:13px; font-weight:700; color:var(--text); font-family:'JetBrains Mono',monospace; margin-bottom:4px; }
+  .module-desc { font-size:11px; color:var(--dim); }
+  .module-install { font-size:10px; color:rgba(0,212,255,0.7); font-family:'JetBrains Mono',monospace; margin-top:8px; }
+
+  /* Arch diagram */
+  .arch { display:flex; align-items:center; gap:0; margin:20px 0; flex-wrap:wrap; }
+  .arch-box {
+    background:var(--elevated); border:1px solid var(--border);
+    padding:10px 16px; font-size:11px; font-weight:600; color:var(--text);
+    font-family:'Space Grotesk',sans-serif; text-align:center; min-width:110px;
+  }
+  .arch-box small { display:block; font-size:9px; color:var(--dim); font-weight:400; margin-top:2px; }
+  .arch-arrow { padding:0 8px; color:var(--dim); font-size:16px; }
+  .arch-box.accent { border-color:var(--accent); background:rgba(0,25,153,0.1); color:var(--accent); }
+
+  /* Screen map */
+  .screen-map { display:grid; grid-template-columns:repeat(4, 1fr); gap:8px; margin:16px 0; }
+  .screen-item {
+    background:var(--elevated); border:1px solid var(--border); padding:12px 14px;
+    border-top:2px solid var(--accent);
+  }
+  .screen-item-name { font-size:11px; font-weight:700; color:var(--text); margin-bottom:4px; font-family:'Space Grotesk',sans-serif; }
+  .screen-item-desc { font-size:10px; color:var(--dim); }
+
+  /* TOC highlight */
+  .toc-link { display:block; font-size:11px; color:var(--dim); padding:3px 0; cursor:pointer; }
+  .toc-link:hover { color:var(--text); }
+
+  @media (max-width:768px) {
+    .sidebar { display:none; }
+    .content { padding:28px 20px; }
+    .modules-grid { grid-template-columns:1fr; }
+    .screen-map { grid-template-columns:repeat(2,1fr); }
+  }
+</style>
+
+<template id="__bundler_thumbnail" data-bg-color="#060810">
+  <svg viewBox="0 0 800 500" xmlns="http://www.w3.org/2000/svg">
+    <!-- Logo mark -->
+    <rect x="340" y="160" width="120" height="120" rx="6" fill="none" stroke="#001999" stroke-width="3"/>
+    <rect x="340" y="160" width="120" height="8" rx="3" fill="#001999"/>
+    <rect x="358" y="182" width="14" height="60" fill="#001999"/>
+    <rect x="358" y="228" width="56" height="14" fill="#001999"/>
+    <circle cx="440" cy="190" r="6" fill="#ff0019"/>
+    <!-- Title -->
+    <text x="400" y="320" text-anchor="middle" fill="#e8eaf0" font-size="22" font-family="monospace" font-weight="700" letter-spacing="-1">LIBRE<tspan fill="#001999">IPTV</tspan></text>
+    <text x="400" y="342" text-anchor="middle" fill="rgba(232,234,240,0.3)" font-size="9" font-family="monospace" letter-spacing="4">DEVELOPER SPEC</text>
+  </svg>
+</template>
+</head>
+<body>
+<div class="layout">
+
+<!-- SIDEBAR NAV -->
+<nav class="sidebar">
+  <div class="sidebar-logo">
+    LIBRE<span>IPTV</span>
+    <small>DEVELOPER SPEC v1.0</small>
+  </div>
+  <div class="nav-section">
+    <div class="nav-label">OVERVIEW</div>
+    <a href="#overview" class="nav-item active"><div class="dot" style="background:#001999"></div>Introducción</a>
+    <a href="#arch" class="nav-item"><div class="dot" style="background:#2a9d8f"></div>Arquitectura</a>
+    <a href="#stack" class="nav-item"><div class="dot" style="background:#d4a017"></div>Stack & Módulos</a>
+  </div>
+  <div class="nav-section">
+    <div class="nav-label">CORE</div>
+    <a href="#m3u-parser" class="nav-item"><div class="dot" style="background:#7c9aff"></div>M3U Parser</a>
+    <a href="#schemas" class="nav-item"><div class="dot" style="background:#80ffab"></div>Esquemas de datos</a>
+    <a href="#epg" class="nav-item"><div class="dot" style="background:#ff9f7c"></div>EPG Engine</a>
+    <a href="#player" class="nav-item"><div class="dot" style="background:#ff6b9d"></div>Player Backend</a>
+  </div>
+  <div class="nav-section">
+    <div class="nav-label">SCREENS</div>
+    <a href="#screens" class="nav-item"><div class="dot" style="background:#2a9d8f"></div>Screen Map</a>
+    <a href="#state" class="nav-item"><div class="dot" style="background:#d4a017"></div>State Management</a>
+    <a href="#shortcuts" class="nav-item"><div class="dot" style="background:#001999"></div>Keyboard Shortcuts</a>
+  </div>
+  <div class="nav-section">
+    <div class="nav-label">INTEGRACIÓN</div>
+    <a href="#xtream" class="nav-item"><div class="dot" style="background:#ff0019"></div>Xtream Codes API</a>
+    <a href="#settings" class="nav-item"><div class="dot" style="background:#7c9aff"></div>Configuración</a>
+  </div>
+</nav>
+
+<!-- MAIN CONTENT -->
+<main class="content">
+
+<!-- OVERVIEW -->
+<section class="section" id="overview">
+  <div class="section-tag">LIBRE IPTV · DEVELOPER SPEC · v1.0 · 2025</div>
+  <h2>Developer Handoff</h2>
+  <p class="lead">Documentación técnica para implementar Libre IPTV en Python. Cubre arquitectura, módulos recomendados, esquemas de datos y guía de integración pantalla por pantalla.</p>
+  <div class="divider"></div>
+
+  <h3>Stack recomendado</h3>
+  <div class="arch">
+    <div class="arch-box accent">UI Layer<small>PyQt6 / Tkinter / Kivy</small></div>
+    <div class="arch-arrow">→</div>
+    <div class="arch-box">App Core<small>Python 3.11+</small></div>
+    <div class="arch-arrow">→</div>
+    <div class="arch-box">M3U Parser<small>m3u8 / custom</small></div>
+    <div class="arch-arrow">→</div>
+    <div class="arch-box">Player<small>MPV / VLC / ffplay</small></div>
+  </div>
+  <div class="arch" style="margin-top:8px">
+    <div class="arch-box">EPG Engine<small>xmltv / requests</small></div>
+    <div class="arch-arrow">→</div>
+    <div class="arch-box">Settings<small>JSON / SQLite</small></div>
+    <div class="arch-arrow">→</div>
+    <div class="arch-box">Profiles<small>Per-user prefs</small></div>
+    <div class="arch-arrow">→</div>
+    <div class="arch-box">Cache<small>SQLite / shelve</small></div>
+  </div>
+</section>
+
+<!-- STACK -->
+<section class="section" id="stack">
+  <div class="section-tag">DEPENDENCIAS</div>
+  <h2>Módulos Python</h2>
+  <p>Módulos recomendados por categoría. Todos disponibles vía <code>pip</code>.</p>
+
+  <div class="modules-grid">
+    <div class="module-card">
+      <div class="module-name">python-mpv</div>
+      <div class="module-desc">Binding de MPV para Python. Ideal para reproducción de streams HLS/MPEG-TS con soporte completo de hardware acceleration.</div>
+      <div class="module-install">pip install python-mpv</div>
+    </div>
+    <div class="module-card" style="--accent:#ff0019">
+      <div class="module-name">m3u8</div>
+      <div class="module-desc">Parser de archivos M3U8. Maneja listas HLS y playlists IPTV. Para M3U simples se recomienda parser propio (más rápido).</div>
+      <div class="module-install">pip install m3u8</div>
+    </div>
+    <div class="module-card" style="--accent:#2a9d8f">
+      <div class="module-name">requests + httpx</div>
+      <div class="module-desc">HTTP para descargar listas M3U remotas, conectar con Xtream Codes API y obtener datos EPG. httpx para requests async.</div>
+      <div class="module-install">pip install requests httpx</div>
+    </div>
+    <div class="module-card" style="--accent:#d4a017">
+      <div class="module-name">lxml / xmltodict</div>
+      <div class="module-desc">Parseo de guías EPG en formato XMLTV (.xml.gz). lxml es más rápido para archivos grandes; xmltodict más simple para guías pequeñas.</div>
+      <div class="module-install">pip install lxml xmltodict</div>
+    </div>
+    <div class="module-card">
+      <div class="module-name">PyQt6</div>
+      <div class="module-desc">Framework UI recomendado para desktop. Permite integrar MPV directamente en un widget. Alternativa: PySide6 (misma API, licencia LGPL).</div>
+      <div class="module-install">pip install PyQt6</div>
+    </div>
+    <div class="module-card" style="--accent:#7c3aed">
+      <div class="module-name">Pillow</div>
+      <div class="module-desc">Procesamiento de logos de canales (tvg-logo). Descarga, resize y caché de imágenes PNG/JPG. Necesario para la UI de canales.</div>
+      <div class="module-install">pip install Pillow</div>
+    </div>
+    <div class="module-card" style="--accent:#2a9d8f">
+      <div class="module-name">aiohttp</div>
+      <div class="module-desc">Descarga asíncrona de recursos: logos, EPG, verificación de streams. Evita bloquear el hilo de UI durante cargas.</div>
+      <div class="module-install">pip install aiohttp</div>
+    </div>
+    <div class="module-card" style="--accent:#d4a017">
+      <div class="module-name">appdirs + platformdirs</div>
+      <div class="module-desc">Rutas de configuración y caché cross-platform. Ubica correctamente los archivos de configuración en Windows/Mac/Linux.</div>
+      <div class="module-install">pip install platformdirs</div>
+    </div>
+  </div>
+</section>
+
+<!-- M3U PARSER -->
+<section class="section" id="m3u-parser">
+  <div class="section-tag">CORE MODULE</div>
+  <h2>M3U Parser</h2>
+  <p>El parser debe soportar los tres formatos de entrada: archivo local, URL remota y Xtream Codes API. Estructura recomendada:</p>
+
+  <h3>Clase base</h3>
+<pre><span class="kw">from</span> dataclasses <span class="kw">import</span> dataclass, field
+<span class="kw">from</span> typing <span class="kw">import</span> List, Optional
+<span class="kw">import</span> re, requests
+
+<span class="dec">@dataclass</span>
+<span class="kw">class</span> <span class="cls">Channel</span>:
+    <span class="comment"># Campos del #EXTINF</span>
+    name: <span class="cls">str</span>
+    url: <span class="cls">str</span>
+    group: <span class="cls">str</span> = <span class="str">""</span>           <span class="comment"># group-title</span>
+    tvg_id: <span class="cls">str</span> = <span class="str">""</span>          <span class="comment"># tvg-id  (para EPG)</span>
+    tvg_name: <span class="cls">str</span> = <span class="str">""</span>        <span class="comment"># tvg-name</span>
+    tvg_logo: <span class="cls">str</span> = <span class="str">""</span>        <span class="comment"># tvg-logo URL</span>
+    num: <span class="cls">int</span> = <span class="num">0</span>               <span class="comment"># tvg-chno</span>
+    is_live: <span class="cls">bool</span> = <span class="cls">True</span>
+    is_vod: <span class="cls">bool</span> = <span class="cls">False</span>
+    is_series: <span class="cls">bool</span> = <span class="cls">False</span>
+
+<span class="dec">@dataclass</span>
+<span class="kw">class</span> <span class="cls">Playlist</span>:
+    source: <span class="cls">str</span>                  <span class="comment"># URL o path</span>
+    channels: <span class="cls">List</span>[<span class="cls">Channel</span>] = field(default_factory=<span class="cls">list</span>)
+    epg_url: <span class="cls">str</span> = <span class="str">""</span>
+    groups: <span class="cls">List</span>[<span class="cls">str</span>] = field(default_factory=<span class="cls">list</span>)
+
+<span class="kw">class</span> <span class="cls">M3UParser</span>:
+    <span class="fn">EXTINF_RE</span> = re.compile(
+        <span class="str">r'#EXTINF:(?P&lt;dur&gt;-?\d+)'</span>
+        <span class="str">r'(?:.*?tvg-id="(?P&lt;tvg_id&gt;[^"]*)")?'</span>
+        <span class="str">r'(?:.*?tvg-name="(?P&lt;tvg_name&gt;[^"]*)")?'</span>
+        <span class="str">r'(?:.*?tvg-logo="(?P&lt;tvg_logo&gt;[^"]*)")?'</span>
+        <span class="str">r'(?:.*?tvg-chno="(?P&lt;num&gt;\d+)")?'</span>
+        <span class="str">r'(?:.*?group-title="(?P&lt;group&gt;[^"]*)")?'</span>
+        <span class="str">r'.*?,(?P&lt;name&gt;.+)'</span>
+    )
+
+    <span class="kw">def</span> <span class="fn">parse</span>(self, source: <span class="cls">str</span>) -> <span class="cls">Playlist</span>:
+        content = self.<span class="fn">_fetch</span>(source)
+        <span class="kw">return</span> self.<span class="fn">_parse_content</span>(content, source)
+
+    <span class="kw">def</span> <span class="fn">_fetch</span>(self, source: <span class="cls">str</span>) -> <span class="cls">str</span>:
+        <span class="kw">if</span> source.startswith(<span class="str">"http"</span>):
+            r = requests.<span class="fn">get</span>(source, timeout=<span class="num">30</span>)
+            r.raise_for_status()
+            <span class="kw">return</span> r.text
+        <span class="kw">with</span> <span class="fn">open</span>(source, encoding=<span class="str">"utf-8"</span>, errors=<span class="str">"replace"</span>) <span class="kw">as</span> f:
+            <span class="kw">return</span> f.read()
+
+    <span class="kw">def</span> <span class="fn">_parse_content</span>(self, content: <span class="cls">str</span>, source: <span class="cls">str</span>) -> <span class="cls">Playlist</span>:
+        playlist = <span class="cls">Playlist</span>(source=source)
+        lines = content.splitlines()
+        i, channel_num = <span class="num">0</span>, <span class="num">1</span>
+
+        <span class="comment"># Extract EPG URL from header</span>
+        <span class="kw">if</span> lines <span class="kw">and</span> lines[<span class="num">0</span>].startswith(<span class="str">"#EXTM3U"</span>):
+            epg_match = re.<span class="fn">search</span>(<span class="str">r'url-tvg="([^"]+)"'</span>, lines[<span class="num">0</span>])
+            <span class="kw">if</span> epg_match:
+                playlist.epg_url = epg_match.<span class="fn">group</span>(<span class="num">1</span>)
+            i = <span class="num">1</span>
+
+        <span class="kw">while</span> i &lt; len(lines):
+            line = lines[i].<span class="fn">strip</span>()
+            <span class="kw">if</span> line.startswith(<span class="str">"#EXTINF"</span>):
+                m = self.<span class="fn">EXTINF_RE</span>.<span class="fn">match</span>(line)
+                <span class="kw">if</span> m <span class="kw">and</span> i + <span class="num">1</span> &lt; len(lines):
+                    url = lines[i + <span class="num">1</span>].<span class="fn">strip</span>()
+                    <span class="kw">if</span> url <span class="kw">and not</span> url.startswith(<span class="str">"#"</span>):
+                        ch = <span class="cls">Channel</span>(
+                            name=m.<span class="fn">group</span>(<span class="str">"name"</span>).<span class="fn">strip</span>(),
+                            url=url,
+                            group=m.<span class="fn">group</span>(<span class="str">"group"</span>) <span class="kw">or</span> <span class="str">"General"</span>,
+                            tvg_id=m.<span class="fn">group</span>(<span class="str">"tvg_id"</span>) <span class="kw">or</span> <span class="str">""</span>,
+                            tvg_name=m.<span class="fn">group</span>(<span class="str">"tvg_name"</span>) <span class="kw">or</span> <span class="str">""</span>,
+                            tvg_logo=m.<span class="fn">group</span>(<span class="str">"tvg_logo"</span>) <span class="kw">or</span> <span class="str">""</span>,
+                            num=<span class="fn">int</span>(m.<span class="fn">group</span>(<span class="str">"num"</span>) <span class="kw">or</span> channel_num),
+                        )
+                        <span class="comment"># Detect VOD/Series by group name</span>
+                        grp_lower = ch.group.<span class="fn">lower</span>()
+                        ch.is_vod = <span class="fn">any</span>(k <span class="kw">in</span> grp_lower <span class="kw">for</span> k <span class="kw">in</span> [<span class="str">"movie"</span>, <span class="str">"pelicula"</span>, <span class="str">"film"</span>, <span class="str">"vod"</span>])
+                        ch.is_series = <span class="fn">any</span>(k <span class="kw">in</span> grp_lower <span class="kw">for</span> k <span class="kw">in</span> [<span class="str">"series"</span>, <span class="str">"serie"</span>, <span class="str">"shows"</span>])
+                        ch.is_live = <span class="kw">not</span> ch.is_vod <span class="kw">and not</span> ch.is_series
+                        playlist.channels.<span class="fn">append</span>(ch)
+                        channel_num += <span class="num">1</span>
+                        i += <span class="num">2</span>
+                        <span class="kw">continue</span>
+            i += <span class="num">1</span>
+
+        playlist.groups = <span class="fn">list</span>(<span class="fn">dict.fromkeys</span>(c.group <span class="kw">for</span> c <span class="kw">in</span> playlist.channels))
+        <span class="kw">return</span> playlist</pre>
+
+  <h3>Xtream Codes</h3>
+<pre><span class="kw">class</span> <span class="cls">XtreamClient</span>:
+    <span class="kw">def</span> <span class="fn">__init__</span>(self, server: <span class="cls">str</span>, username: <span class="cls">str</span>, password: <span class="cls">str</span>):
+        self.base = server.<span class="fn">rstrip</span>(<span class="str">"/"</span>)
+        self.auth = {<span class="str">"username"</span>: username, <span class="str">"password"</span>: password}
+
+    <span class="kw">def</span> <span class="fn">get_m3u_url</span>(self) -> <span class="cls">str</span>:
+        <span class="comment"># Returns full M3U playlist URL with auth token</span>
+        params = <span class="str">"&"</span>.<span class="fn">join</span>(<span class="str">f"{k}={v}"</span> <span class="kw">for</span> k, v <span class="kw">in</span> self.auth.items())
+        <span class="kw">return</span> <span class="str">f"{self.base}/get.php?{params}&type=m3u_plus&output=ts"</span>
+
+    <span class="kw">def</span> <span class="fn">get_epg_url</span>(self) -> <span class="cls">str</span>:
+        params = <span class="str">"&"</span>.<span class="fn">join</span>(<span class="str">f"{k}={v}"</span> <span class="kw">for</span> k, v <span class="kw">in</span> self.auth.items())
+        <span class="kw">return</span> <span class="str">f"{self.base}/xmltv.php?{params}"</span>
+
+    <span class="kw">def</span> <span class="fn">get_account_info</span>(self) -> <span class="cls">dict</span>:
+        r = requests.<span class="fn">get</span>(<span class="str">f"{self.base}/player_api.php"</span>, params=self.auth)
+        <span class="kw">return</span> r.<span class="fn">json</span>()  <span class="comment"># expiry, max_connections, status</span></pre>
+</section>
+
+<!-- SCHEMAS -->
+<section class="section" id="schemas">
+  <div class="section-tag">DATA LAYER</div>
+  <h2>Esquemas de datos</h2>
+
+  <h3>Configuración de fuentes</h3>
+<pre><span class="comment"># config/sources.json</span>
+{
+  <span class="str">"sources"</span>: [
+    {
+      <span class="str">"id"</span>: <span class="str">"uuid-v4"</span>,
+      <span class="str">"name"</span>: <span class="str">"Mi Lista Principal"</span>,
+      <span class="str">"type"</span>: <span class="str">"m3u_url"</span>,  <span class="comment">// m3u_url | m3u_file | xtream</span>
+      <span class="str">"url"</span>: <span class="str">"https://..."</span>,
+      <span class="str">"enabled"</span>: <span class="cls">true</span>,
+      <span class="str">"last_updated"</span>: <span class="str">"2025-04-26T12:00:00Z"</span>,
+      <span class="str">"auto_refresh"</span>: <span class="cls">true</span>,
+      <span class="str">"refresh_interval"</span>: <span class="num">86400</span>  <span class="comment">// seconds</span>
+    },
+    {
+      <span class="str">"id"</span>: <span class="str">"uuid-v4"</span>,
+      <span class="str">"name"</span>: <span class="str">"Sports Package"</span>,
+      <span class="str">"type"</span>: <span class="str">"xtream"</span>,
+      <span class="str">"server"</span>: <span class="str">"http://proveedor.com:8080"</span>,
+      <span class="str">"username"</span>: <span class="str">"user"</span>,
+      <span class="str">"password"</span>: <span class="str">"pass"</span>,
+      <span class="str">"enabled"</span>: <span class="cls">true</span>
+    }
+  ]
+}</pre>
+
+  <h3>Perfil de usuario</h3>
+<pre><span class="comment"># config/profiles.json</span>
+{
+  <span class="str">"profiles"</span>: [
+    {
+      <span class="str">"id"</span>: <span class="str">"uuid-v4"</span>,
+      <span class="str">"name"</span>: <span class="str">"Carlos"</span>,
+      <span class="str">"color"</span>: <span class="str">"#001999"</span>,
+      <span class="str">"pin"</span>: <span class="cls">null</span>,
+      <span class="str">"parental_lock"</span>: <span class="cls">false</span>,
+      <span class="str">"favorites"</span>: [<span class="str">"ch-id-1"</span>, <span class="str">"ch-id-2"</span>],
+      <span class="str">"history"</span>: [
+        { <span class="str">"channel_id"</span>: <span class="str">"ch-id-1"</span>, <span class="str">"watched_at"</span>: <span class="str">"2025-04-26T20:15:00Z"</span>, <span class="str">"duration_s"</span>: <span class="num">2700</span> }
+      ],
+      <span class="str">"prefs"</span>: {
+        <span class="str">"theme"</span>: <span class="str">"midnight"</span>,
+        <span class="str">"accent_color"</span>: <span class="str">"#001999"</span>,
+        <span class="str">"last_channel"</span>: <span class="str">"ch-id-1"</span>,
+        <span class="str">"volume"</span>: <span class="num">80</span>,
+        <span class="str">"subtitle_lang"</span>: <span class="str">"off"</span>
+      }
+    }
+  ]
+}</pre>
+
+  <h3>Caché de canales</h3>
+<pre><span class="comment"># cache/channels.json (generado por el parser)</span>
+{
+  <span class="str">"generated_at"</span>: <span class="str">"2025-04-26T12:00:00Z"</span>,
+  <span class="str">"source_id"</span>: <span class="str">"uuid-v4"</span>,
+  <span class="str">"total"</span>: <span class="num">245</span>,
+  <span class="str">"groups"</span>: [<span class="str">"Noticias"</span>, <span class="str">"Deportes"</span>, <span class="str">"Películas"</span>],
+  <span class="str">"channels"</span>: [
+    {
+      <span class="str">"id"</span>: <span class="str">"hash(url)"</span>,
+      <span class="str">"name"</span>: <span class="str">"ESPN"</span>,
+      <span class="str">"url"</span>: <span class="str">"https://stream.url/live/espn.m3u8"</span>,
+      <span class="str">"group"</span>: <span class="str">"Deportes"</span>,
+      <span class="str">"tvg_id"</span>: <span class="str">"ESPN.us"</span>,
+      <span class="str">"tvg_logo"</span>: <span class="str">"https://logos.url/espn.png"</span>,
+      <span class="str">"num"</span>: <span class="num">10</span>,
+      <span class="str">"is_live"</span>: <span class="cls">true</span>
+    }
+  ]
+}</pre>
+</section>
+
+<!-- EPG -->
+<section class="section" id="epg">
+  <div class="section-tag">EPG ENGINE</div>
+  <h2>Guía de programación (EPG)</h2>
+
+  <h3>Parser XMLTV</h3>
+<pre><span class="kw">import</span> gzip, xml.etree.ElementTree <span class="kw">as</span> ET
+<span class="kw">from</span> datetime <span class="kw">import</span> datetime
+<span class="kw">from</span> typing <span class="kw">import</span> Dict, List
+
+<span class="dec">@dataclass</span>
+<span class="kw">class</span> <span class="cls">Program</span>:
+    channel_id: <span class="cls">str</span>
+    title: <span class="cls">str</span>
+    start: <span class="cls">datetime</span>
+    stop: <span class="cls">datetime</span>
+    desc: <span class="cls">str</span> = <span class="str">""</span>
+    category: <span class="cls">str</span> = <span class="str">""</span>
+    icon: <span class="cls">str</span> = <span class="str">""</span>
+
+<span class="kw">class</span> <span class="cls">EPGParser</span>:
+    <span class="kw">def</span> <span class="fn">load</span>(self, url_or_path: <span class="cls">str</span>) -> <span class="cls">Dict</span>[<span class="cls">str</span>, <span class="cls">List</span>[<span class="cls">Program</span>]]:
+        content = self.<span class="fn">_fetch</span>(url_or_path)
+        root = ET.<span class="fn">fromstring</span>(content)
+        epg: <span class="cls">Dict</span>[<span class="cls">str</span>, <span class="cls">List</span>[<span class="cls">Program</span>]] = {}
+
+        <span class="kw">for</span> prog <span class="kw">in</span> root.<span class="fn">findall</span>(<span class="str">"programme"</span>):
+            ch_id = prog.<span class="fn">get</span>(<span class="str">"channel"</span>)
+            p = <span class="cls">Program</span>(
+                channel_id=ch_id,
+                title=(prog.<span class="fn">find</span>(<span class="str">"title"</span>) <span class="kw">or</span> {}).<span class="fn">text</span> <span class="kw">or</span> <span class="str">""</span>,
+                start=<span class="cls">datetime</span>.<span class="fn">strptime</span>(prog.<span class="fn">get</span>(<span class="str">"start"</span>), <span class="str">"%Y%m%d%H%M%S %z"</span>),
+                stop=<span class="cls">datetime</span>.<span class="fn">strptime</span>(prog.<span class="fn">get</span>(<span class="str">"stop"</span>), <span class="str">"%Y%m%d%H%M%S %z"</span>),
+                desc=(prog.<span class="fn">find</span>(<span class="str">"desc"</span>) <span class="kw">or</span> {}).<span class="fn">text</span> <span class="kw">or</span> <span class="str">""</span>,
+            )
+            epg.<span class="fn">setdefault</span>(ch_id, []).<span class="fn">append</span>(p)
+        <span class="kw">return</span> epg
+
+    <span class="kw">def</span> <span class="fn">_fetch</span>(self, source: <span class="cls">str</span>) -> <span class="cls">bytes</span>:
+        <span class="kw">if</span> source.startswith(<span class="str">"http"</span>):
+            r = requests.<span class="fn">get</span>(source, timeout=<span class="num">60</span>)
+            data = r.content
+        <span class="kw">else</span>:
+            data = <span class="fn">open</span>(source, <span class="str">"rb"</span>).<span class="fn">read</span>()
+        <span class="kw">return</span> gzip.<span class="fn">decompress</span>(data) <span class="kw">if</span> source.<span class="fn">endswith</span>(<span class="str">".gz"</span>) <span class="kw">else</span> data</pre>
+</section>
+
+<!-- PLAYER BACKEND -->
+<section class="section" id="player">
+  <div class="section-tag">PLAYER</div>
+  <h2>Player Backend (MPV)</h2>
+<pre><span class="kw">import</span> mpv
+
+<span class="kw">class</span> <span class="cls">IPTVPlayer</span>:
+    <span class="kw">def</span> <span class="fn">__init__</span>(self, wid=<span class="cls">None</span>):
+        <span class="comment"># wid = window ID para embed en PyQt widget</span>
+        self.player = mpv.<span class="cls">MPV</span>(
+            wid=<span class="fn">str</span>(wid) <span class="kw">if</span> wid <span class="kw">else</span> <span class="cls">None</span>,
+            vo=<span class="str">"gpu"</span>,             <span class="comment"># Hardware accel</span>
+            hwdec=<span class="str">"auto-safe"</span>,   <span class="comment"># Decodificación GPU</span>
+            cache=<span class="cls">True</span>,
+            cache_secs=<span class="num">10</span>,
+            demuxer_max_bytes=<span class="str">"50MiB"</span>,
+            log_handler=<span class="fn">print</span>,
+        )
+
+    <span class="kw">def</span> <span class="fn">play</span>(self, url: <span class="cls">str</span>, headers: <span class="cls">dict</span> = {}):
+        <span class="kw">if</span> headers:
+            hdr = <span class="str">","</span>.<span class="fn">join</span>(<span class="str">f"{k}: {v}"</span> <span class="kw">for</span> k, v <span class="kw">in</span> headers.items())
+            self.player[<span class="str">"http-header-fields"</span>] = hdr
+        self.player.<span class="fn">play</span>(url)
+
+    <span class="kw">def</span> <span class="fn">stop</span>(self): self.player.<span class="fn">stop</span>()
+    <span class="kw">def</span> <span class="fn">set_volume</span>(self, v: <span class="cls">int</span>): self.player.volume = v
+    <span class="kw">def</span> <span class="fn">toggle_pause</span>(self): self.player.pause = <span class="kw">not</span> self.player.pause
+    <span class="kw">def</span> <span class="fn">screenshot</span>(self, path): self.player.<span class="fn">screenshot</span>(path)
+
+    <span class="dec">@property</span>
+    <span class="kw">def</span> <span class="fn">is_playing</span>(self): <span class="kw">return not</span> self.player.pause <span class="kw">and</span> self.player.time_pos <span class="kw">is not None</span></pre>
+
+  <h4>TOKENS DE AUTENTICACIÓN EN URL</h4>
+  <p>Algunos proveedores inyectan tokens en la URL del stream. El parser los preserva; no modificar la URL del canal al reproducir.</p>
+<pre><span class="comment"># Ejemplo de URL con token (Los 40 de tu M3U):</span>
+<span class="str">"https://normielista.xyz:443/play/2odmEbi_.../m3u8"</span>
+<span class="comment"># → Reproducir directamente sin modificar</span>
+self.player.<span class="fn">play</span>(<span class="str">"https://normielista.xyz:443/play/TOKEN/m3u8"</span>)</pre>
+</section>
+
+<!-- SCREENS -->
+<section class="section" id="screens">
+  <div class="section-tag">UI SCREENS</div>
+  <h2>Mapa de pantallas</h2>
+  <div class="screen-map">
+    <div class="screen-item">
+      <div class="screen-item-name">Selector de Perfiles</div>
+      <div class="screen-item-desc">Al iniciar. Grid de perfiles con inicial. Animación de entrada.</div>
+    </div>
+    <div class="screen-item">
+      <div class="screen-item-name">Importar Lista</div>
+      <div class="screen-item-desc">Primera vez. 3 métodos: File / URL / Xtream. Parsing animado.</div>
+    </div>
+    <div class="screen-item">
+      <div class="screen-item-name">Home</div>
+      <div class="screen-item-desc">Hero + filas: Continue, Favoritos, Sports, News.</div>
+    </div>
+    <div class="screen-item">
+      <div class="screen-item-name">Live TV</div>
+      <div class="screen-item-desc">Mini player + lista de canales con zapping ↑↓.</div>
+    </div>
+    <div class="screen-item">
+      <div class="screen-item-name">VOD</div>
+      <div class="screen-item-desc">Filas por group-title. Pósters. Modal de detalle con temporadas.</div>
+    </div>
+    <div class="screen-item">
+      <div class="screen-item-name">EPG Guide</div>
+      <div class="screen-item-desc">Grilla horizontal. Línea de tiempo actual. Click → info.</div>
+    </div>
+    <div class="screen-item">
+      <div class="screen-item-name">Player</div>
+      <div class="screen-item-desc">Fullscreen. Controles auto-hide. PiP. Multi-view 4 streams.</div>
+    </div>
+    <div class="screen-item">
+      <div class="screen-item-name">Android TV</div>
+      <div class="screen-item-desc">TiviMate-style. D-pad. Lista izq + player + EPG derecha.</div>
+    </div>
+    <div class="screen-item">
+      <div class="screen-item-name">Canales</div>
+      <div class="screen-item-desc">Grid/Lista. Filtro por grupo. Favoritos inline.</div>
+    </div>
+    <div class="screen-item">
+      <div class="screen-item-name">Favoritos / Recientes</div>
+      <div class="screen-item-desc">Tabs. Historial de reproducción con duración.</div>
+    </div>
+    <div class="screen-item">
+      <div class="screen-item-name">Búsqueda</div>
+      <div class="screen-item-desc">Live search. Filtra nombre + nowPlaying + grupo.</div>
+    </div>
+    <div class="screen-item">
+      <div class="screen-item-name">Ajustes</div>
+      <div class="screen-item-desc">6 secciones: General / Fuentes / Reproducción / Apariencia / Perfiles / Atajos.</div>
+    </div>
+  </div>
+</section>
+
+<!-- STATE -->
+<section class="section" id="state">
+  <div class="section-tag">STATE MANAGEMENT</div>
+  <h2>Estado de la aplicación</h2>
+
+  <table>
+    <tr><th>Estado</th><th>Tipo</th><th>Persistencia</th><th>Descripción</th></tr>
+    <tr><td>current_profile</td><td>Profile</td><td>Session</td><td>Perfil activo al iniciar</td></tr>
+    <tr><td>active_channel</td><td>Channel</td><td>Profile prefs</td><td>Último canal visto por perfil</td></tr>
+    <tr><td>favorites</td><td>List[str]</td><td>Profile JSON</td><td>IDs de canales favoritos</td></tr>
+    <tr><td>history</td><td>List[HistoryEntry]</td><td>Profile JSON</td><td>Historial con timestamp y duración</td></tr>
+    <tr><td>playlist_cache</td><td>Playlist</td><td>cache/channels.json</td><td>Canales parseados. TTL = 24h</td></tr>
+    <tr><td>epg_cache</td><td>Dict[str, List[Program]]</td><td>cache/epg.pkl</td><td>Guía EPG. TTL = 12h</td></tr>
+    <tr><td>logo_cache</td><td>Dict[str, Path]</td><td>cache/logos/</td><td>Logos descargados en disco</td></tr>
+    <tr><td>volume</td><td>int (0-100)</td><td>Profile prefs</td><td>Volumen por perfil</td></tr>
+    <tr><td>theme</td><td>str</td><td>Profile prefs</td><td>midnight / ocean / ember / abyss</td></tr>
+  </table>
+</section>
+
+<!-- SHORTCUTS -->
+<section class="section" id="shortcuts">
+  <div class="section-tag">KEYBOARD</div>
+  <h2>Atajos de teclado</h2>
+
+  <table>
+    <tr><th>Tecla</th><th>Contexto</th><th>Acción</th><th>Python event</th></tr>
+    <tr><td>Space</td><td>Player</td><td>Play / Pause</td><td>player.toggle_pause()</td></tr>
+    <tr><td>↑ / ↓</td><td>Live TV</td><td>Canal anterior / siguiente</td><td>zap_up() / zap_down()</td></tr>
+    <tr><td>F</td><td>Player</td><td>Fullscreen</td><td>player.fullscreen = True</td></tr>
+    <tr><td>M</td><td>Player</td><td>Mute</td><td>player.mute = not player.mute</td></tr>
+    <tr><td>P</td><td>Player</td><td>Picture-in-Picture</td><td>open_pip_window()</td></tr>
+    <tr><td>G</td><td>Global</td><td>Abrir guía EPG</td><td>nav('epg')</td></tr>
+    <tr><td>/ o Ctrl+F</td><td>Global</td><td>Búsqueda</td><td>nav('search')</td></tr>
+    <tr><td>L</td><td>Global</td><td>Live TV</td><td>nav('live')</td></tr>
+    <tr><td>V</td><td>Global</td><td>VOD</td><td>nav('vod')</td></tr>
+    <tr><td>1–9</td><td>Global</td><td>Cambio rápido de canal</td><td>switch_channel_by_num(n)</td></tr>
+    <tr><td>Esc</td><td>Player</td><td>Salir del player</td><td>nav(prev_screen)</td></tr>
+    <tr><td>D-pad OK</td><td>Android TV</td><td>Seleccionar canal</td><td>play_focused_channel()</td></tr>
+  </table>
+</section>
+
+<!-- XTREAM -->
+<section class="section" id="xtream">
+  <div class="section-tag">API INTEGRATION</div>
+  <h2>Xtream Codes API</h2>
+
+  <table>
+    <tr><th>Endpoint</th><th>Método</th><th>Descripción</th></tr>
+    <tr><td>/player_api.php?username=&password=</td><td>GET</td><td>Account info, expiry, active connections</td></tr>
+    <tr><td>/get.php?...&type=m3u_plus</td><td>GET</td><td>Lista M3U completa (live + VOD + series)</td></tr>
+    <tr><td>/xmltv.php?username=&password=</td><td>GET</td><td>Guía EPG en formato XMLTV (.xml.gz)</td></tr>
+    <tr><td>/player_api.php?action=get_live_categories</td><td>GET</td><td>Categorías de canales live (JSON)</td></tr>
+    <tr><td>/player_api.php?action=get_vod_categories</td><td>GET</td><td>Categorías VOD (JSON)</td></tr>
+    <tr><td>/player_api.php?action=get_vod_info&vod_id=</td><td>GET</td><td>Metadata de película (título, año, poster)</td></tr>
+    <tr><td>/play/{token}/stream.m3u8</td><td>GET</td><td>Stream directo con token de auth</td></tr>
+  </table>
+</section>
+
+<!-- SETTINGS -->
+<section class="section" id="settings">
+  <div class="section-tag">CONFIG FILES</div>
+  <h2>Estructura de archivos</h2>
+<pre><span class="comment"># Linux: ~/.config/libre-iptv/
+# Windows: %APPDATA%/libre-iptv/
+# macOS: ~/Library/Application Support/libre-iptv/</span>
+
+libre-iptv/
+├── config/
+│   ├── sources.json      <span class="comment"># Fuentes M3U configuradas</span>
+│   ├── profiles.json     <span class="comment"># Perfiles y preferencias</span>
+│   └── settings.json     <span class="comment"># Ajustes globales (player, UI)</span>
+├── cache/
+│   ├── channels.json     <span class="comment"># Canales parseados (TTL 24h)</span>
+│   ├── epg.pkl           <span class="comment"># EPG serializado (TTL 12h)</span>
+│   └── logos/            <span class="comment"># Logos de canales (PNG, 64x64)</span>
+│       └── {tvg_id}.png
+└── logs/
+    └── libre-iptv.log    <span class="comment"># Rotación diaria, máx 7 días</span></pre>
+</section>
+
+</main>
+</div>
+</body>
+</html>

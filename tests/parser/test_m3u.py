@@ -285,3 +285,114 @@ class TestParseM3uFile:
         channels = parse_m3u_file(cp1252_file)
         assert len(channels) == 1
         assert "Can" in channels[0].name
+
+
+class TestParseM3uVodDetection:
+    def test_vod_from_movie_keyword(self) -> None:
+        content = '#EXTINF:-1 group-title="Movies",Film\nhttp://x.com/movie\n'
+        channels = parse_m3u(content)
+        assert channels[0].is_vod is True
+        assert channels[0].is_live is False
+        assert channels[0].is_series is False
+
+    def test_vod_from_pelicula_keyword(self) -> None:
+        content = '#EXTINF:-1 group-title="_películas_EST",Peli\nhttp://x.com/peli\n'
+        channels = parse_m3u(content)
+        assert channels[0].is_vod is True
+        assert channels[0].is_live is False
+
+    def test_vod_from_film_keyword(self) -> None:
+        content = '#EXTINF:-1 group-title="Films",Film\nhttp://x.com/film\n'
+        channels = parse_m3u(content)
+        assert channels[0].is_vod is True
+        assert channels[0].is_live is False
+
+    def test_vod_from_vod_keyword(self) -> None:
+        content = '#EXTINF:-1 group-title="VOD",Video\nhttp://x.com/vod\n'
+        channels = parse_m3u(content)
+        assert channels[0].is_vod is True
+        assert channels[0].is_live is False
+
+
+class TestParseM3uSeriesDetection:
+    def test_series_from_series_keyword(self) -> None:
+        content = '#EXTINF:-1 group-title="Series",Show\nhttp://x.com/series\n'
+        channels = parse_m3u(content)
+        assert channels[0].is_series is True
+        assert channels[0].is_live is False
+        assert channels[0].is_vod is False
+
+    def test_series_from_serie_keyword(self) -> None:
+        content = '#EXTINF:-1 group-title="Serie TV",Show\nhttp://x.com/serie\n'
+        channels = parse_m3u(content)
+        assert channels[0].is_series is True
+        assert channels[0].is_live is False
+
+    def test_series_from_shows_keyword(self) -> None:
+        content = '#EXTINF:-1 group-title="TV Shows",Show\nhttp://x.com/show\n'
+        channels = parse_m3u(content)
+        assert channels[0].is_series is True
+        assert channels[0].is_live is False
+
+
+class TestParseM3uVodSeriesPrecedence:
+    def test_vod_wins_over_series(self) -> None:
+        content = '#EXTINF:-1 group-title="Movie Series",Show\nhttp://x.com/movie\n'
+        channels = parse_m3u(content)
+        assert channels[0].is_vod is True
+        assert channels[0].is_series is False
+        assert channels[0].is_live is False
+
+
+class TestParseM3uChannelNum:
+    def test_tvg_chno_extracted(self) -> None:
+        content = '#EXTINF:-1 tvg-chno="42",Ch\nhttp://x.com\n'
+        channels = parse_m3u(content)
+        assert channels[0].num == 42
+
+    def test_missing_tvg_chno_defaults_zero(self) -> None:
+        content = '#EXTINF:-1,Ch\nhttp://x.com\n'
+        channels = parse_m3u(content)
+        assert channels[0].num == 0
+
+    def test_invalid_tvg_chno_defaults_zero(self) -> None:
+        content = '#EXTINF:-1 tvg-chno="abc",Ch\nhttp://x.com\n'
+        channels = parse_m3u(content)
+        assert channels[0].num == 0
+
+
+class TestParseM3uChannelId:
+    def test_id_generated_from_url(self) -> None:
+        import hashlib
+        url = "http://x.com/stream"
+        expected = hashlib.sha256(url.encode()).hexdigest()[:12]
+        content = f'#EXTINF:-1,Ch\n{url}\n'
+        channels = parse_m3u(content)
+        assert channels[0].id == expected
+
+    def test_id_deterministic(self) -> None:
+        content = '#EXTINF:-1,Ch\nhttp://x.com/stream\n'
+        ch1 = parse_m3u(content)[0]
+        ch2 = parse_m3u(content)[0]
+        assert ch1.id == ch2.id
+
+
+class TestParseM3uBackwardCompat:
+    def test_existing_tests_still_pass(self) -> None:
+        content = (
+            '#EXTINF:-1 tvg-id="cnn" tvg-name="CNN" tvg-logo="http://logo/cnn.png"'
+            ' group-title="News",CNN International\n'
+            "http://stream.example.com/cnn\n"
+        )
+        channels = parse_m3u(content)
+        assert len(channels) == 1
+        ch = channels[0]
+        assert ch.name == "CNN International"
+        assert ch.url == "http://stream.example.com/cnn"
+        assert ch.tvg_id == "cnn"
+        assert ch.group == "News"
+        assert ch.is_live is True
+        assert ch.is_vod is False
+        assert ch.is_series is False
+        assert ch.num == 0
+        assert ch.id != ""

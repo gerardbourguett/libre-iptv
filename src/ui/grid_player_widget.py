@@ -1,6 +1,7 @@
 from PyQt6.QtCore import pyqtSignal
 from PyQt6.QtWidgets import QGridLayout, QWidget
 
+from src.core.vlc_manager import VlcManager
 from src.ui.player_widget import PlayerWidget
 
 
@@ -10,7 +11,10 @@ class GridPlayerWidget(QWidget):
     def __init__(self, parent: QWidget | None = None) -> None:
         super().__init__(parent)
         self._active_cell: int = 0
-        self._cells: list[PlayerWidget] = [PlayerWidget() for _ in range(4)]
+        shared_instance = VlcManager.get_instance()
+        self._cells: list[PlayerWidget] = [
+            PlayerWidget(vlc_instance=shared_instance) for _ in range(4)
+        ]
 
         layout = QGridLayout(self)
         layout.setContentsMargins(0, 0, 0, 0)

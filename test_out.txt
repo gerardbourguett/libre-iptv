@@ -1,0 +1,90 @@
+============================= test session starts =============================
+platform win32 -- Python 3.14.0, pytest-9.0.3, pluggy-1.6.0 -- D:\Documents\iptv\.venv\Scripts\python.exe
+cachedir: .pytest_cache
+PyQt6 6.11.0 -- Qt runtime 6.11.0 -- Qt compiled 6.11.0
+rootdir: D:\Documents\iptv
+configfile: pyproject.toml
+plugins: cov-7.1.0, qt-4.5.0
+collecting ... collected 1 item
+
+D:\Documents\iptv\.venv\Lib\site-packages\coverage\control.py:958: CoverageWarning: No data was collected. (no-data-collected); see https://coverage.readthedocs.io/en/7.13.5/messages.html#warning-no-data-collected
+  self._warn("No data was collected.", slug="no-data-collected")
+tests/test_hardcoded_strings.py::TestZeroHardcodedStrings::test_no_hardcoded_ui_strings_in_src_ui FAILED [100%]
+
+================================== FAILURES ===================================
+_______ TestZeroHardcodedStrings.test_no_hardcoded_ui_strings_in_src_ui _______
+
+self = <tests.test_hardcoded_strings.TestZeroHardcodedStrings object at 0x000001E48DFF34D0>
+
+    def test_no_hardcoded_ui_strings_in_src_ui(self):
+        ui_dir = Path(__file__).parent.parent / "src" / "ui"
+        assert ui_dir.exists(), f"UI directory not found: {ui_dir}"
+    
+        all_findings: dict[str, list[str]] = {}
+        for py_file in sorted(ui_dir.glob("*.py")):
+            findings = _scan_file(py_file)
+            if findings:
+                all_findings[str(py_file.relative_to(ui_dir.parent.parent))] = findings
+    
+        if all_findings:
+            msg_lines = ["Found hardcoded user-facing strings outside t() calls:"]
+            for file_path, strings in all_findings.items():
+                for s in strings:
+                    msg_lines.append(f"  {file_path}: '{s}'")
+>           pytest.fail("\n".join(msg_lines))
+E           Failed: Found hardcoded user-facing strings outside t() calls:
+E             src\ui\logo_loader.py: '.png'
+E             src\ui\logo_loader.py: '.png.tmp'
+
+tests\test_hardcoded_strings.py:269: Failed
+=============================== tests coverage ================================
+_______________ coverage: platform win32, python 3.14.0-final-0 _______________
+
+Name                                 Stmts   Miss  Cover   Missing
+------------------------------------------------------------------
+src\__init__.py                          0      0   100%
+src\core\__init__.py                     0      0   100%
+src\core\cache.py                      105    105     0%   1-140
+src\core\parental.py                    24     24     0%   1-41
+src\core\settings.py                    48     48     0%   1-56
+src\core\source_manager.py              81     81     0%   1-122
+src\core\vlc_manager.py                 13     13     0%   1-19
+src\i18n\__init__.py                     2      2     0%   1-3
+src\i18n\translator.py                  64     64     0%   1-104
+src\models\__init__.py                   0      0   100%
+src\models\channel.py                   24     24     0%   1-46
+src\models\profile.py                   50     50     0%   1-105
+src\models\programme.py                 27     27     0%   1-52
+src\parser\__init__.py                   0      0   100%
+src\parser\m3u.py                       96     96     0%   1-174
+src\parser\xmltv.py                    100    100     0%   1-145
+src\platform.py                         51     51     0%   1-78
+src\profiles\__init__.py                 0      0   100%
+src\profiles\manager.py                146    146     0%   1-329
+src\services\__init__.py                 0      0   100%
+src\services\epg_service.py            118    118     0%   1-154
+src\services\menu_builder.py            27     27     0%   1-44
+src\services\playlist_service.py        46     46     0%   1-60
+src\services\profile_controller.py      22     22     0%   1-35
+src\ui\__init__.py                       0      0   100%
+src\ui\about_dialog.py                  59     59     0%   1-112
+src\ui\app_settings.py                  33     33     0%   1-50
+src\ui\channel_list.py                 235    235     0%   1-351
+src\ui\control_bar.py                   52     52     0%   1-83
+src\ui\grid_player_widget.py            44     44     0%   1-60
+src\ui\loading_overlay.py               50     50     0%   1-66
+src\ui\logo_delegate.py                 91     91     0%   1-173
+src\ui\logo_loader.py                  126    126     0%   1-167
+src\ui\main_window.py                  403    403     0%   1-570
+src\ui\parental_panel.py               154    154     0%   1-239
+src\ui\pin_dialog.py                    85     85     0%   1-144
+src\ui\player_widget.py                 62     62     0%   1-88
+src\ui\profile_bar.py                  242    242     0%   1-415
+src\ui\profile_chooser.py              176    176     0%   2-299
+src\ui\toast.py                         52     52     0%   1-83
+src\ui\welcome_dialog.py                87     87     0%   1-188
+------------------------------------------------------------------
+TOTAL                                 2995   2995     0%
+=========================== short test summary info ===========================
+FAILED tests/test_hardcoded_strings.py::TestZeroHardcodedStrings::test_no_hardcoded_ui_strings_in_src_ui
+============================== 1 failed in 0.78s ==============================

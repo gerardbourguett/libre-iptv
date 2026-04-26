@@ -2,16 +2,33 @@ from unittest.mock import MagicMock, patch
 
 import pytest
 
+from src.i18n import init_translator, t
 from src.models.channel import Channel
 from src.ui.main_window import MainWindow
 
 
+@pytest.fixture(autouse=True)
+def reset_vlc_manager():
+    from src.core.vlc_manager import VlcManager
+
+    VlcManager._instance = None
+    yield
+
+
+@pytest.fixture(autouse=True)
+def translator(qapp):
+    init_translator(locales_dir=None)
+
+
 @pytest.fixture
 def mock_vlc():
-    with patch("src.ui.player_widget.vlc") as mock:
+    with patch("src.ui.player_widget.vlc") as mock, patch(
+        "src.core.vlc_manager.vlc"
+    ) as mock_mgr:
         instance = MagicMock()
         player = MagicMock()
         mock.Instance.return_value = instance
+        mock_mgr.Instance.return_value = instance
         instance.media_player_new.return_value = player
         yield mock, player
 
@@ -26,11 +43,11 @@ def window(qtbot, mock_vlc):
 class TestMainWindowLayout:
     def test_window_title_is_iptv_player(self, window):
         """S1: window title is 'IPTV Player'."""
-        assert window.windowTitle() == "IPTV Player"
+        assert window.windowTitle() == t("app.title")
 
     def test_status_bar_default_message(self, window):
         """S4: default status bar message is 'No playlist loaded'."""
-        assert window.statusBar().currentMessage() == "No playlist loaded"
+        assert window.statusBar().currentMessage() == t("app.status.no_playlist")
 
 
 class TestMenuBar:
@@ -48,26 +65,26 @@ class TestMenuBar:
 
     def test_file_menu_exists(self, window):
         """S2: File menu present in menu bar."""
-        menu = self._find_menu(window, "File")
+        menu = self._find_menu(window, t("menu.file"))
         assert menu is not None
 
     def test_file_menu_has_open_playlist(self, window):
         """S2: File menu contains 'Open Playlist'."""
-        menu = self._find_menu(window, "File")
-        action = self._find_action(menu, "Open Playlist")
+        menu = self._find_menu(window, t("menu.file"))
+        action = self._find_action(menu, t("menu.open_playlist"))
         assert action is not None
 
     def test_file_menu_has_quit(self, window):
         """S2: File menu contains 'Quit'."""
-        menu = self._find_menu(window, "File")
-        action = self._find_action(menu, "Quit")
+        menu = self._find_menu(window, t("menu.file"))
+        action = self._find_action(menu, t("menu.quit"))
         assert action is not None
 
     def test_playback_menu_has_stop(self, window):
         """S3: Playback menu contains 'Stop'."""
-        menu = self._find_menu(window, "Playback")
+        menu = self._find_menu(window, t("menu.playback"))
         assert menu is not None
-        action = self._find_action(menu, "Stop")
+        action = self._find_action(menu, t("menu.stop"))
         assert action is not None
 
 
@@ -84,12 +101,12 @@ class TestOpenUrl:
         menu_bar = window.menuBar()
         file_menu = None
         for action in menu_bar.actions():
-            if action.text() == "File":
+            if action.text() == t("menu.file"):
                 file_menu = action.menu()
                 break
         assert file_menu is not None
         action_texts = [a.text() for a in file_menu.actions()]
-        assert "Open URL..." in action_texts
+        assert t("menu.open_url") in action_texts
 
     def test_open_url_empty_input_does_nothing(self, window, monkeypatch):
         monkeypatch.setattr(
@@ -101,7 +118,7 @@ class TestOpenUrl:
         status = window.statusBar()
         assert status is not None
         # Status unchanged from initial
-        assert status.currentMessage() == "No playlist loaded"
+        assert status.currentMessage() == t("app.status.no_playlist")
 
     def test_on_fetch_complete_loads_channels_and_updates_status(self, window):
         from src.models.channel import Channel
@@ -110,7 +127,7 @@ class TestOpenUrl:
         assert window._channel_list.count() > 0
         status = window.statusBar()
         assert status is not None
-        assert status.currentMessage() == "1 channels loaded"
+        assert status.currentMessage() == t("app.status.channels_loaded", count=1)
 
     def test_on_fetch_error_shows_error_in_status(self, window):
         window._on_fetch_error("Connection refused")
@@ -126,13 +143,13 @@ class TestOpenUrl:
             "src.ui.main_window.QInputDialog.getText",
             lambda *a, **kw: ("http://example.com/playlist.m3u", True),
         )
-        # Patch PlaylistFetchWorker.start so it never actually runs
-        with patch("src.ui.main_window.PlaylistFetchWorker.start"):
+        # Patch PlaylistFetchWorker.start in the service so it never actually runs
+        with patch("src.services.playlist_service.PlaylistFetchWorker.start"):
             window._open_url()
 
         status = window.statusBar()
         assert status is not None
-        assert status.currentMessage() == "Fetching..."
+        assert status.currentMessage() == t("app.status.fetching")
 
 
 class TestSettingsIntegration:
@@ -176,7 +193,7 @@ class TestSettingsIntegration:
             lambda *a, **kw: ("/home/user/playlist.m3u", ""),
         )
         monkeypatch.setattr(
-            "src.ui.main_window.parse_m3u_file",
+            "src.services.playlist_service.parse_m3u_file",
             lambda path: [Channel(url="http://a.com", name="Ch1", group="")],
         )
         mock_settings = MagicMock()
@@ -217,7 +234,50 @@ class TestLayoutSwitcher:
         """A View menu is present in the menu bar."""
         menu_bar = window.menuBar()
         texts = [a.text() for a in menu_bar.actions()]
-        assert "View" in texts
+        assert t("menu.view") in texts
+
+
+class TestMainWindowMenu:
+    def test_help_menu_exists(self, window):
+        menu_bar = window.menuBar()
+        texts = [a.text() for a in menu_bar.actions()]
+        assert t("menu.help") in texts
+
+    def test_acerca_de_action_exists(self, window):
+        menu_bar = window.menuBar()
+        help_menu = None
+        for action in menu_bar.actions():
+            if action.text() == t("menu.help"):
+                help_menu = action.menu()
+                break
+        assert help_menu is not None
+        action_texts = [a.text() for a in help_menu.actions()]
+        assert t("menu.about") in action_texts
+
+    def test_acerca_de_action_opens_about_dialog(self, window):
+        from unittest.mock import MagicMock, patch
+
+        mock_dialog_cls = MagicMock()
+        with patch("src.ui.about_dialog.AboutDialog", mock_dialog_cls):
+            menu_bar = window.menuBar()
+            help_menu = None
+            for action in menu_bar.actions():
+                if action.text() == t("menu.help"):
+                    help_menu = action.menu()
+                    break
+            assert help_menu is not None
+
+            acerca_action = None
+            for action in help_menu.actions():
+                if action.text() == t("menu.about"):
+                    acerca_action = action
+                    break
+            assert acerca_action is not None
+
+            acerca_action.trigger()
+
+        mock_dialog_cls.assert_called_once_with(parent=window)
+        mock_dialog_cls.return_value.exec.assert_called_once()
 
 
 class TestDarkTheme:
@@ -247,7 +307,7 @@ class TestOpenPlaylist:
 
         window._open_playlist()
 
-        assert "M3U Playlists (*.m3u *.m3u8)" in str(mock_dialog.call_args)
+        assert t("dialog.playlist_filter") in str(mock_dialog.call_args)
 
     def test_open_playlist_loads_channels_and_updates_status(
         self, window, monkeypatch
@@ -258,7 +318,7 @@ class TestOpenPlaylist:
             MagicMock(return_value=("/path/test.m3u", "")),
         )
         monkeypatch.setattr(
-            "src.ui.main_window.parse_m3u_file",
+            "src.services.playlist_service.parse_m3u_file",
             MagicMock(
                 return_value=[Channel(url="http://a.com", name="TestCh", group="")]
             ),
@@ -267,7 +327,9 @@ class TestOpenPlaylist:
         window._open_playlist()
 
         assert window._channel_list.count() > 0
-        assert window.statusBar().currentMessage() == "1 channels loaded"
+        assert window.statusBar().currentMessage() == t(
+            "app.status.channels_loaded", count=1
+        )
 
     def test_open_playlist_cancel_does_not_change_state(self, window, monkeypatch):
         """Cancelling the dialog leaves channel list and status bar unchanged."""
@@ -281,4 +343,4 @@ class TestOpenPlaylist:
         window._open_playlist()
 
         assert load_channels_mock.call_count == 0
-        assert window.statusBar().currentMessage() == "No playlist loaded"
+        assert window.statusBar().currentMessage() == t("app.status.no_playlist")

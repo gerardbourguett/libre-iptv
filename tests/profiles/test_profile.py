@@ -17,6 +17,44 @@ class TestProfileDefaults:
         assert p.favorites == []
         assert p.recent == []
         assert p.last_channel_url == ""
+        assert p.pin_hash == ""
+        assert p.blocked == {}
+
+    def test_to_dict_roundtrip(self):
+        p = Profile(
+            id="abc-123",
+            name="Mi Lista",
+            color="#4caf50",
+            playlist_url="http://example.com/list.m3u",
+            playlist_path="",
+            favorites=["http://cnn.com"],
+            recent=["http://bbc.com", "http://espn.com"],
+            last_channel_url="http://bbc.com",
+        )
+        restored = Profile.from_dict(p.to_dict())
+        assert restored == p
+
+    def test_to_dict_contains_all_fields(self):
+        p = Profile(id="x", name="N", color="#ff9800")
+        d = p.to_dict()
+        assert set(d.keys()) == {
+            "id", "name", "color",
+            "playlist_url", "playlist_path",
+            "favorites", "recent", "last_channel_url",
+            "pin_hash", "blocked", "epg_url",
+            "history", "prefs",
+        }
+
+    def test_from_dict_missing_optional_fields_use_defaults(self):
+        d = {"id": "x", "name": "N", "color": "#00bcd4"}
+        p = Profile.from_dict(d)
+        assert p.favorites == []
+        assert p.recent == []
+        assert p.playlist_url == ""
+        assert p.last_channel_url == ""
+        assert p.pin_hash == ""
+        assert p.blocked == {}
+        assert p.epg_url == ""
 
 
 class TestProfileSerialization:
@@ -41,6 +79,8 @@ class TestProfileSerialization:
             "id", "name", "color",
             "playlist_url", "playlist_path",
             "favorites", "recent", "last_channel_url",
+            "pin_hash", "blocked", "epg_url",
+            "history", "prefs",
         }
 
     def test_from_dict_missing_optional_fields_use_defaults(self):
@@ -50,6 +90,8 @@ class TestProfileSerialization:
         assert p.recent == []
         assert p.playlist_url == ""
         assert p.last_channel_url == ""
+        assert p.pin_hash == ""
+        assert p.blocked == {}
 
     def test_from_dict_missing_required_field_raises(self):
         with pytest.raises((KeyError, TypeError)):

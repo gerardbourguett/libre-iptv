@@ -12,6 +12,7 @@ from PyQt6.QtWidgets import (
     QWidget,
 )
 
+from src.i18n import t
 from src.models.profile import AVATAR_COLORS
 
 _DIALOG_STYLE = """
@@ -82,7 +83,7 @@ class WelcomeDialog(QDialog):
 
     def __init__(self, parent: QWidget | None = None) -> None:
         super().__init__(parent)
-        self.setWindowTitle("IPTV Player")
+        self.setWindowTitle(t("app.title"))
         self.setMinimumWidth(420)
         self.setStyleSheet(_DIALOG_STYLE)
 
@@ -126,26 +127,26 @@ class WelcomeDialog(QDialog):
         layout.setContentsMargins(40, 40, 40, 40)
 
         # Title
-        title = QLabel("Bienvenido a IPTV Player")
+        title = QLabel(t("welcome.title"))
         title.setStyleSheet(
             "font-size: 20px; font-weight: bold; color: #e0e0e0;"
         )
         title.setAlignment(Qt.AlignmentFlag.AlignCenter)
         layout.addWidget(title)
 
-        subtitle = QLabel("Crea tu primer perfil para comenzar.")
+        subtitle = QLabel(t("welcome.subtitle"))
         subtitle.setStyleSheet("color: #888888; font-size: 13px;")
         subtitle.setAlignment(Qt.AlignmentFlag.AlignCenter)
         layout.addWidget(subtitle)
 
         # Name input
         self._name_input = QLineEdit()
-        self._name_input.setPlaceholderText("Nombre del perfil")
+        self._name_input.setPlaceholderText(t("welcome.name_placeholder"))
         self._name_input.setMaxLength(24)
         layout.addWidget(self._name_input)
 
         # Color picker
-        color_label = QLabel("Color de avatar:")
+        color_label = QLabel(t("welcome.color_label"))
         color_label.setStyleSheet("color: #9e9e9e; font-size: 12px;")
         layout.addWidget(color_label)
 
@@ -174,7 +175,7 @@ class WelcomeDialog(QDialog):
         layout.addWidget(spacer)
 
         # Start button
-        self._start_btn = QPushButton("Comenzar")
+        self._start_btn = QPushButton(t("welcome.start_button"))
         self._start_btn.setObjectName("start_btn")
         self._start_btn.setEnabled(False)
         self._start_btn.clicked.connect(self.accept)

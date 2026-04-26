@@ -1,8 +1,10 @@
 import json
 from pathlib import Path
+from unittest.mock import patch
 
 import pytest
 
+from src.models.channel import Channel
 from src.models.profile import AVATAR_COLORS
 from src.profiles.manager import ProfileManager
 
@@ -187,3 +189,98 @@ class TestPersistenceAcrossInstances:
         assert len(mgr2.list_profiles()) == 1
         assert mgr2.active_profile().id == p.id
         assert mgr2.active_profile().name == "Persistido"
+
+
+class TestParentalPin:
+    def test_set_pin_stores_hash(self, tmp_manager: ProfileManager):
+        tmp_manager.create_profile("A", "#00bcd4")
+        tmp_manager.set_pin("1234")
+        assert tmp_manager.active_profile().pin_hash != ""
+        assert "$" in tmp_manager.active_profile().pin_hash
+
+    def test_verify_pin_correct(self, tmp_manager: ProfileManager):
+        tmp_manager.create_profile("A", "#00bcd4")
+        tmp_manager.set_pin("5678")
+        assert tmp_manager.verify_pin("5678") is True
+
+    def test_verify_pin_wrong(self, tmp_manager: ProfileManager):
+        tmp_manager.create_profile("A", "#00bcd4")
+        tmp_manager.set_pin("5678")
+        assert tmp_manager.verify_pin("0000") is False
+
+    def test_verify_pin_when_none_set(self, tmp_manager: ProfileManager):
+        tmp_manager.create_profile("A", "#00bcd4")
+        assert tmp_manager.verify_pin("1234") is False
+
+    def test_remove_pin_clears_hash(self, tmp_manager: ProfileManager):
+        tmp_manager.create_profile("A", "#00bcd4")
+        tmp_manager.set_pin("1234")
+        tmp_manager.remove_pin()
+        assert tmp_manager.active_profile().pin_hash == ""
+
+
+class TestParentalBlocking:
+    def test_block_channel_adds_url(self, tmp_manager: ProfileManager):
+        tmp_manager.create_profile("A", "#00bcd4")
+        tmp_manager.block_channel("http://cnn.com")
+        assert "http://cnn.com" in tmp_manager.active_profile().blocked["channels"]
+
+    def test_unblock_channel_removes_url(self, tmp_manager: ProfileManager):
+        tmp_manager.create_profile("A", "#00bcd4")
+        tmp_manager.block_channel("http://cnn.com")
+        tmp_manager.unblock_channel("http://cnn.com")
+        assert "http://cnn.com" not in tmp_manager.active_profile().blocked.get("channels", [])
+
+    def test_block_group_adds_name(self, tmp_manager: ProfileManager):
+        tmp_manager.create_profile("A", "#00bcd4")
+        tmp_manager.block_group("Sports")
+        assert "Sports" in tmp_manager.active_profile().blocked["groups"]
+
+    def test_unblock_group_removes_name(self, tmp_manager: ProfileManager):
+        tmp_manager.create_profile("A", "#00bcd4")
+        tmp_manager.block_group("Sports")
+        tmp_manager.unblock_group("Sports")
+        assert "Sports" not in tmp_manager.active_profile().blocked.get("groups", [])
+
+    def test_is_channel_blocked_by_url(self, tmp_manager: ProfileManager):
+        tmp_manager.create_profile("A", "#00bcd4")
+        tmp_manager.block_channel("http://cnn.com")
+        ch = Channel(url="http://cnn.com", name="CNN", group="News")
+        assert tmp_manager.is_channel_blocked(ch) is True
+
+    def test_is_channel_blocked_by_group(self, tmp_manager: ProfileManager):
+        tmp_manager.create_profile("A", "#00bcd4")
+        tmp_manager.block_group("Sports")
+        ch = Channel(url="http://espn.com", name="ESPN", group="Sports")
+        assert tmp_manager.is_channel_blocked(ch) is True
+
+    def test_is_channel_not_blocked(self, tmp_manager: ProfileManager):
+        tmp_manager.create_profile("A", "#00bcd4")
+        tmp_manager.block_channel("http://cnn.com")
+        ch = Channel(url="http://bbc.com", name="BBC", group="News")
+        assert tmp_manager.is_channel_blocked(ch) is False
+
+    def test_block_persists_to_disk(self, tmp_manager: ProfileManager, tmp_path: Path):
+        tmp_manager.create_profile("A", "#00bcd4")
+        tmp_manager.block_channel("http://cnn.com")
+        tmp_manager.block_group("News")
+        pid = tmp_manager.active_profile().id
+
+        mgr2 = ProfileManager(base_dir=tmp_path)
+        profile = mgr2._profiles[pid]
+        assert "http://cnn.com" in profile.blocked["channels"]
+        assert "News" in profile.blocked["groups"]
+
+    def test_remove_pin_clears_blocked(self, tmp_manager: ProfileManager):
+        tmp_manager.create_profile("A", "#00bcd4")
+        tmp_manager.set_pin("1234")
+        tmp_manager.block_channel("http://cnn.com")
+        tmp_manager.remove_pin()
+        assert tmp_manager.active_profile().blocked == {}
+
+
+class TestConfigDir:
+    def test_default_base_dir_uses_platform_config(self, tmp_path: Path):
+        with patch("src.profiles.manager.get_config_dir", return_value=tmp_path):
+            mgr = ProfileManager()
+            assert mgr._dir == tmp_path / "profiles"

@@ -2,9 +2,12 @@ import sys
 
 from PyQt6.QtCore import Qt
 from PyQt6.QtGui import QColor, QCursor, QFont, QPalette
-from PyQt6.QtWidgets import QApplication
+from PyQt6.QtWidgets import QApplication, QMessageBox
 
+from src.i18n import init_translator
+from src.platform import check_vlc, get_platform_font
 from src.profiles.manager import ProfileManager
+from src.ui.app_settings import AppSettings
 from src.ui.main_window import MainWindow
 from src.ui.profile_chooser import ProfileChooserDialog
 
@@ -28,7 +31,7 @@ def configure_app(app: QApplication) -> None:
     palette.setColor(QPalette.ColorRole.PlaceholderText, QColor("#555555"))
     app.setPalette(palette)
 
-    font = QFont("Segoe UI", 10)
+    font = QFont(get_platform_font(), 10)
     app.setFont(font)
 
 
@@ -37,6 +40,15 @@ def main() -> None:
     app.setOrganizationName("iptv")
     app.setApplicationName("iptv-player")
     configure_app(app)
+
+    try:
+        check_vlc()
+    except ImportError as exc:
+        QMessageBox.critical(None, "VLC Not Found", str(exc))
+        sys.exit(1)
+
+    settings = AppSettings()
+    init_translator(settings=settings)
 
     manager = ProfileManager()
 

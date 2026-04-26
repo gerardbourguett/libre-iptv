@@ -1,3 +1,4 @@
+import hashlib
 import logging
 import re
 import urllib.request
@@ -9,6 +10,21 @@ from src.models.channel import Channel
 logger = logging.getLogger(__name__)
 
 _ATTR_RE = re.compile(r'([\w-]+)="([^"]*)"')
+
+_VOD_KEYWORDS = {"movie", "pelicula", "película", "películas", "pélicula", "film", "vod"}
+_SERIES_KEYWORDS = {"series", "serie", "shows"}
+
+
+def _detect_content_type(group: str) -> tuple[bool, bool, bool]:
+    """Return (is_live, is_vod, is_series) based on group-title keywords."""
+    group_lower = group.lower()
+    is_vod = any(kw in group_lower for kw in _VOD_KEYWORDS)
+    is_series = any(kw in group_lower for kw in _SERIES_KEYWORDS)
+    if is_vod:
+        return False, True, False
+    if is_series:
+        return False, False, True
+    return True, False, False
 
 
 def parse_m3u(content: str) -> list[Channel]:
@@ -50,6 +66,16 @@ def parse_m3u(content: str) -> list[Channel]:
         comma_pos = extinf_line.rfind(",")
         name = extinf_line[comma_pos + 1:].strip() if comma_pos != -1 else ""
 
+        group = attrs.get("group-title", "")
+        is_live, is_vod, is_series = _detect_content_type(group)
+
+        num = 0
+        if "tvg-chno" in attrs:
+            try:
+                num = int(attrs["tvg-chno"])
+            except ValueError:
+                num = 0
+
         channels.append(
             Channel(
                 url=url,
@@ -57,7 +83,11 @@ def parse_m3u(content: str) -> list[Channel]:
                 tvg_id=attrs.get("tvg-id", ""),
                 tvg_name=attrs.get("tvg-name", ""),
                 tvg_logo=attrs.get("tvg-logo", ""),
-                group=attrs.get("group-title", ""),
+                group=group,
+                num=num,
+                is_live=is_live,
+                is_vod=is_vod,
+                is_series=is_series,
             )
         )
         i = j + 1

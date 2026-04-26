@@ -1,10 +1,39 @@
+from unittest.mock import MagicMock, patch
+
 import pytest
 
+from src.i18n import init_translator
 from src.models.channel import Channel
 from src.models.profile import AVATAR_COLORS
 from src.profiles.manager import ProfileManager
 from src.ui.main_window import MainWindow
 from src.ui.profile_bar import ProfileSelectorBar
+
+
+@pytest.fixture(autouse=True)
+def reset_vlc_manager():
+    from src.core.vlc_manager import VlcManager
+
+    VlcManager._instance = None
+    yield
+
+
+@pytest.fixture(autouse=True)
+def translator(qapp):
+    init_translator(locales_dir=None)
+
+
+@pytest.fixture
+def mock_vlc():
+    with patch("src.ui.player_widget.vlc") as mock, patch(
+        "src.core.vlc_manager.vlc"
+    ) as mock_mgr:
+        instance = MagicMock()
+        player = MagicMock()
+        mock.Instance.return_value = instance
+        mock_mgr.Instance.return_value = instance
+        instance.media_player_new.return_value = player
+        yield mock, player
 
 
 @pytest.fixture
@@ -15,7 +44,7 @@ def manager(tmp_path):
 
 
 @pytest.fixture
-def window(manager, qtbot):
+def window(manager, qtbot, mock_vlc):
     w = MainWindow(manager)
     qtbot.addWidget(w)
     return w

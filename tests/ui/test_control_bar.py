@@ -1,6 +1,12 @@
 import pytest
 
+from src.i18n import init_translator, t
 from src.ui.control_bar import ControlBarWidget
+
+
+@pytest.fixture(autouse=True)
+def translator(qapp):
+    init_translator(locales_dir=None)
 
 
 @pytest.fixture
@@ -15,10 +21,10 @@ class TestControlBarInitialState:
         assert bar.volume_slider.value() == 100
 
     def test_mute_button_initial_text_is_mute(self, bar):
-        assert bar.mute_btn.text() == "🔇 Mute"
+        assert bar.mute_btn.text() == t("control.mute")
 
     def test_stop_button_text_is_stop(self, bar):
-        assert bar.stop_btn.text() == "■ Stop"
+        assert bar.stop_btn.text() == t("control.stop")
 
     def test_control_bar_has_fixed_height(self, bar):
         assert bar.height() == 56
@@ -44,12 +50,12 @@ class TestControlBarSignals:
 
     def test_mute_button_text_changes_to_unmute_when_clicked(self, bar):
         bar.mute_btn.click()
-        assert bar.mute_btn.text() == "🔊 Unmute"
+        assert bar.mute_btn.text() == t("control.unmute")
 
     def test_mute_button_text_toggles_back_to_mute_on_second_click(self, bar):
         bar.mute_btn.click()
         bar.mute_btn.click()
-        assert bar.mute_btn.text() == "🔇 Mute"
+        assert bar.mute_btn.text() == t("control.mute")
 
 
 class TestControlBarStyling:

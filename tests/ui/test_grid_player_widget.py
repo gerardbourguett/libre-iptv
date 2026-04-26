@@ -5,12 +5,23 @@ import pytest
 from src.ui.grid_player_widget import GridPlayerWidget
 
 
+@pytest.fixture(autouse=True)
+def reset_vlc_manager():
+    from src.core.vlc_manager import VlcManager
+
+    VlcManager._instance = None
+    yield
+
+
 @pytest.fixture
 def mock_vlc():
-    with patch("src.ui.player_widget.vlc") as mock:
+    with patch("src.ui.player_widget.vlc") as mock, patch(
+        "src.core.vlc_manager.vlc"
+    ) as mock_mgr:
         instance = MagicMock()
         player = MagicMock()
         mock.Instance.return_value = instance
+        mock_mgr.Instance.return_value = instance
         instance.media_player_new.return_value = player
         yield mock, player
 
@@ -83,3 +94,10 @@ class TestPlayRouting:
         grid.play_in_active("http://stream.example.com/test")
         player.set_media.assert_called_once()
         player.play.assert_called_once()
+
+
+class TestSharedInstance:
+    def test_all_cells_share_same_vlc_instance(self, grid):
+        """All four PlayerWidget cells use the same vlc.Instance object."""
+        instances = [cell._vlc_instance for cell in grid._cells]
+        assert all(i is instances[0] for i in instances)

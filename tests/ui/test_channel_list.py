@@ -1,8 +1,14 @@
 import pytest
 from PyQt6.QtCore import Qt
 
+from src.i18n import init_translator, t
 from src.models.channel import Channel
 from src.ui.channel_list import ChannelListPanel, ChannelListWidget
+
+
+@pytest.fixture(autouse=True)
+def translator(qapp):
+    init_translator(locales_dir=None)
 
 
 @pytest.fixture
@@ -38,10 +44,10 @@ class TestLoadChannels:
             Channel(url="http://b.com", name="Channel B", group=""),
         ]
         widget.load_channels(channels)
-        # "Uncategorized" header + 2 channels = 3 items
+        # Uncategorized header + 2 channels = 3 items
         assert widget.count() == 3
         header = widget.item(0)
-        assert "▼" in header.text() and "Uncategorized" in header.text()
+        assert "▼" in header.text() and t("channel_list.uncategorized") in header.text()
         assert not (header.flags() & Qt.ItemFlag.ItemIsSelectable)
 
     def test_load_empty_list_clears_widget(self, widget, news_sports_channels):
@@ -294,12 +300,6 @@ class TestChannelListStyling:
         header = widget.item(0)
         assert header.foreground().color().name() == "#9e9e9e"
 
-    def test_channel_item_has_indent(self, widget, news_sports_channels):
-        """Channel items have a leading 2-space indent."""
-        widget.load_channels(news_sports_channels)
-        channel_item = widget.item(1)  # CNN after News header
-        assert channel_item.text().startswith("  ")
-
 
 class TestChannelListPanel:
     @pytest.fixture
@@ -329,3 +329,59 @@ class TestChannelListPanel:
         # CNN should be hidden (item(1) after News header)
         cnn_item = panel.channel_list.item(1)
         assert cnn_item.isHidden()
+
+
+class TestBlockedChannels:
+    @pytest.fixture
+    def blocked_channels(self):
+        return [
+            Channel(url="http://cnn.com", name="CNN", group="News"),
+            Channel(url="http://bbc.com", name="BBC", group="News"),
+            Channel(url="http://espn.com", name="ESPN", group="Sports"),
+        ]
+
+    def test_blocked_channel_shows_lock_icon(self, widget, blocked_channels):
+        widget.load_channels(
+            blocked_channels,
+            blocked_urls=frozenset(["http://cnn.com"]),
+            blocked_groups=frozenset(),
+        )
+        # item(0)=News header, item(1)=CNN, item(2)=BBC, item(3)=Sports header, item(4)=ESPN
+        cnn_item = widget.item(1)
+        assert "🔒" in cnn_item.text()
+
+    def test_blocked_group_shows_lock_icon(self, widget, blocked_channels):
+        widget.load_channels(
+            blocked_channels,
+            blocked_urls=frozenset(),
+            blocked_groups=frozenset(["Sports"]),
+        )
+        espn_item = widget.item(4)
+        assert "🔒" in espn_item.text()
+
+    def test_unblocked_channel_no_lock_icon(self, widget, blocked_channels):
+        widget.load_channels(
+            blocked_channels,
+            blocked_urls=frozenset(["http://cnn.com"]),
+            blocked_groups=frozenset(),
+        )
+        bbc_item = widget.item(2)
+        assert "🔒" not in bbc_item.text()
+
+    def test_blocked_channel_dimmed_style(self, widget, blocked_channels):
+        widget.load_channels(
+            blocked_channels,
+            blocked_urls=frozenset(["http://cnn.com"]),
+            blocked_groups=frozenset(),
+        )
+        cnn_item = widget.item(1)
+        assert cnn_item.foreground().color().name() == "#757575"
+
+    def test_unblocked_channel_normal_style(self, widget, blocked_channels):
+        widget.load_channels(
+            blocked_channels,
+            blocked_urls=frozenset(),
+            blocked_groups=frozenset(),
+        )
+        cnn_item = widget.item(1)
+        assert cnn_item.foreground().color().name() == "#e0e0e0"

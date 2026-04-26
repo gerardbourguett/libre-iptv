@@ -5,6 +5,7 @@ requires-python = ">=3.12"
 dependencies = [
     "PyQt6>=6.6",
     "python-vlc>=3.0",
+    "platformdirs>=4.0",
 ]
 
 [project.optional-dependencies]

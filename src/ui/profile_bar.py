@@ -15,6 +15,7 @@ from PyQt6.QtWidgets import (
     QWidget,
 )
 
+from src.i18n import get_translator, t
 from src.models.profile import Profile
 from src.profiles.manager import ProfileManager
 
@@ -147,7 +148,7 @@ class NewProfileDialog(QDialog):
 
     def __init__(self, parent: QWidget | None = None) -> None:
         super().__init__(parent)
-        self.setWindowTitle("Nuevo perfil")
+        self.setWindowTitle(t("profile.new_dialog_title"))
         self.setMinimumWidth(360)
         self.setStyleSheet(_DIALOG_STYLE)
         self._build_ui()
@@ -157,13 +158,13 @@ class NewProfileDialog(QDialog):
         layout.setSpacing(14)
         layout.setContentsMargins(24, 24, 24, 24)
 
-        layout.addWidget(QLabel("Nombre del perfil:"))
+        layout.addWidget(QLabel(t("profile.name_label")))
         self._name_input = QLineEdit()
-        self._name_input.setPlaceholderText("Nombre")
+        self._name_input.setPlaceholderText(t("profile.name_placeholder"))
         self._name_input.setMaxLength(24)
         layout.addWidget(self._name_input)
 
-        layout.addWidget(QLabel("Color de avatar:"))
+        layout.addWidget(QLabel(t("profile.color_label")))
         from src.models.profile import AVATAR_COLORS
         self._color_picker = _ColorPicker(AVATAR_COLORS[0])
         layout.addWidget(self._color_picker)
@@ -182,7 +183,7 @@ class NewProfileDialog(QDialog):
         layout.addWidget(buttons)
 
         self._name_input.textChanged.connect(
-            lambda t: self._ok_btn.setEnabled(bool(t.strip()))
+            lambda text: self._ok_btn.setEnabled(bool(text.strip()))
         )
 
     @property
@@ -206,7 +207,7 @@ class ProfileSettingsDialog(QDialog):
         parent: QWidget | None = None,
     ) -> None:
         super().__init__(parent)
-        self.setWindowTitle("Configurar perfil")
+        self.setWindowTitle(t("profile.settings_dialog_title"))
         self.setMinimumWidth(360)
         self.setStyleSheet(_DIALOG_STYLE)
         self._profile = profile
@@ -218,12 +219,12 @@ class ProfileSettingsDialog(QDialog):
         layout.setSpacing(14)
         layout.setContentsMargins(24, 24, 24, 24)
 
-        layout.addWidget(QLabel("Nombre:"))
+        layout.addWidget(QLabel(t("profile.rename_label")))
         self._name_input = QLineEdit(self._profile.name)
         self._name_input.setMaxLength(24)
         layout.addWidget(self._name_input)
 
-        layout.addWidget(QLabel("Color de avatar:"))
+        layout.addWidget(QLabel(t("profile.color_label")))
         self._color_picker = _ColorPicker(self._profile.color)
         layout.addWidget(self._color_picker)
 
@@ -239,7 +240,7 @@ class ProfileSettingsDialog(QDialog):
         layout.addWidget(buttons)
 
         if self._can_delete:
-            delete_btn = QPushButton("Eliminar perfil")
+            delete_btn = QPushButton(t("profile.delete_button"))
             delete_btn.setStyleSheet(
                 "QPushButton { background: #c62828; color: #fff;"
                 " border: none; border-radius: 6px; padding: 6px 18px; }"
@@ -251,8 +252,8 @@ class ProfileSettingsDialog(QDialog):
     def _on_delete(self) -> None:
         reply = QMessageBox.question(
             self,
-            "Eliminar perfil",
-            f"¿Eliminar '{self._profile.name}'? Esta acción no se puede deshacer.",
+            t("profile.delete_confirm_title"),
+            t("profile.delete_confirm_text", name=self._profile.name),
             QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No,
         )
         if reply == QMessageBox.StandardButton.Yes:
@@ -294,7 +295,7 @@ class ProfileSelectorBar(QWidget):
         profile = self._manager.active_profile()
         self._avatar.set_profile(profile.name[0], profile.color)
         self._name_btn.setText(f"{profile.name}  ▾")
-        self._name_btn.setToolTip(f"Perfil activo: {profile.name}")
+        self._name_btn.setToolTip(t("profile.active_tooltip", name=profile.name))
 
     def profile_name_text(self) -> str:
         return self._name_btn.text()
@@ -321,15 +322,25 @@ class ProfileSelectorBar(QWidget):
 
         self._add_btn = QToolButton()
         self._add_btn.setText("+")
-        self._add_btn.setToolTip("Nuevo perfil")
+        self._add_btn.setToolTip(t("profile.new_tooltip"))
         self._add_btn.clicked.connect(self._on_add_profile)
         layout.addWidget(self._add_btn)
 
         self._settings_btn = QToolButton()
         self._settings_btn.setText("⚙")
-        self._settings_btn.setToolTip("Configurar perfil")
+        self._settings_btn.setToolTip(t("profile.settings_tooltip"))
         self._settings_btn.clicked.connect(self._on_settings)
         layout.addWidget(self._settings_btn)
+
+        tr = get_translator()
+        if tr is not None:
+            tr.language_changed.connect(self._retranslate)
+
+    def _retranslate(self, _code: str) -> None:
+        self._add_btn.setToolTip(t("profile.new_tooltip"))
+        self._settings_btn.setToolTip(t("profile.settings_tooltip"))
+        profile = self._manager.active_profile()
+        self._name_btn.setToolTip(t("profile.active_tooltip", name=profile.name))
 
     def _show_profile_menu(self) -> None:
         menu = QMenu(self)

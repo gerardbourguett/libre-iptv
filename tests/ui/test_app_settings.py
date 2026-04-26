@@ -41,3 +41,12 @@ class TestAppSettingsLastPlaylist:
 
     def test_load_last_playlist_returns_none_when_not_set(self, settings):
         assert settings.load_last_playlist() is None
+
+
+class TestAppSettingsLanguage:
+    def test_save_and_load_language_round_trip(self, settings):
+        settings.save_language("en")
+        assert settings.load_language() == "en"
+
+    def test_load_language_returns_none_when_not_set(self, settings):
+        assert settings.load_language() is None

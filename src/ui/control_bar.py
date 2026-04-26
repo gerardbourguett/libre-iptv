@@ -1,6 +1,8 @@
 from PyQt6.QtCore import Qt, pyqtSignal
 from PyQt6.QtWidgets import QHBoxLayout, QLabel, QPushButton, QSlider, QWidget
 
+from src.i18n import get_translator, t
+
 _ACCENT = "#00bcd4"
 _SURFACE = "#1a1a1a"
 _ELEVATED = "#262626"
@@ -41,10 +43,10 @@ class ControlBarWidget(QWidget):
         self.volume_slider.setRange(0, 100)
         self.volume_slider.setValue(100)
         self.volume_slider.setFixedWidth(160)
-        self.volume_slider.setToolTip("Volume")
+        self.volume_slider.setToolTip(t("control.volume_tooltip"))
 
-        self.mute_btn = QPushButton("🔇 Mute")
-        self.stop_btn = QPushButton("■ Stop")
+        self.mute_btn = QPushButton(t("control.mute"))
+        self.stop_btn = QPushButton(t("control.stop"))
 
         layout = QHBoxLayout(self)
         layout.setContentsMargins(12, 0, 12, 0)
@@ -61,7 +63,21 @@ class ControlBarWidget(QWidget):
         self.stop_btn.clicked.connect(self.stop_requested.emit)
         self.setFixedHeight(56)
 
+        tr = get_translator()
+        if tr is not None:
+            tr.language_changed.connect(self._retranslate)
+
+    def _retranslate(self, _code: str) -> None:
+        self.volume_slider.setToolTip(t("control.volume_tooltip"))
+        self.stop_btn.setText(t("control.stop"))
+        self._update_mute_text()
+
+    def _update_mute_text(self) -> None:
+        self.mute_btn.setText(
+            t("control.unmute") if self._muted else t("control.mute")
+        )
+
     def _on_mute_clicked(self) -> None:
         self._muted = not self._muted
-        self.mute_btn.setText("🔊 Unmute" if self._muted else "🔇 Mute")
+        self._update_mute_text()
         self.mute_toggled.emit(self._muted)

@@ -1,5 +1,8 @@
 from PyQt6.QtCore import QByteArray, QSettings
 
+# DEPRECATED: Replaced by src.core.settings.SettingsManager.
+# Kept for one release cycle for backward compatibility.
+
 
 class AppSettings:
     def __init__(self, settings: QSettings | None = None) -> None:
@@ -40,4 +43,11 @@ class AppSettings:
 
     def load_last_playlist(self) -> str | None:
         value = self._qs.value("playlist/last_path")
+        return str(value) if value is not None else None
+
+    def save_language(self, code: str) -> None:
+        self._qs.setValue("language/code", code)
+
+    def load_language(self) -> str | None:
+        value = self._qs.value("language/code")
         return str(value) if value is not None else None

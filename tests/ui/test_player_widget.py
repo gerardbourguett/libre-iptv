@@ -5,6 +5,11 @@ import pytest
 from src.ui.player_widget import PlayerWidget
 
 
+@pytest.fixture(autouse=True)
+def _patch_translator(monkeypatch):
+    monkeypatch.setattr("src.ui.player_widget.t", lambda key, **kwargs: key)
+
+
 @pytest.fixture
 def mock_vlc():
     """Patch vlc module so tests don't need real VLC playback."""
@@ -110,3 +115,11 @@ class TestPlayerWidgetVolume:
         player.audio_get_mute.return_value = False
         result = widget.toggle_mute()
         assert isinstance(result, bool)
+
+
+class TestBindVlc:
+    def test_calls_platform_bind_vlc(self, widget, mock_vlc, qtbot):
+        _, player = mock_vlc
+        with patch("src.ui.player_widget.platform.bind_vlc") as mock_bind:
+            widget._bind_vlc()
+            mock_bind.assert_called_once_with(player, int(widget.winId()))

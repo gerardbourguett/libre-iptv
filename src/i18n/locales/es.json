@@ -1,0 +1,121 @@
+{
+  "app": {
+    "title": "IPTV Player",
+    "status": {
+      "no_playlist": "No hay lista cargada",
+      "channels_loaded": "{count} canales cargados",
+      "fetching_playlist": "Obteniendo lista...",
+      "fetching": "Obteniendo...",
+      "error": "Error: {message}"
+    },
+    "toast": {
+      "channels_loaded": "Canales cargados correctamente",
+      "channels_load_error": "Error al cargar canales: {message}"
+    }
+  },
+  "menu": {
+    "file": "Archivo",
+    "open_playlist": "Abrir lista",
+    "open_url": "Abrir URL...",
+    "quit": "Salir",
+    "playback": "Reproducción",
+    "stop": "Detener",
+    "view": "Ver",
+    "help": "Ayuda",
+    "about": "Acerca de",
+    "settings": "Configuración"
+  },
+  "layout": {
+    "toolbar": "Layout",
+    "single": "Single",
+    "dual": "Dual",
+    "quad": "Quad",
+    "single_tooltip": "Vista simple",
+    "dual_tooltip": "Vista dual",
+    "quad_tooltip": "Vista cuádruple"
+  },
+  "dialog": {
+    "open_playlist_title": "Abrir lista",
+    "open_url_title": "Abrir URL",
+    "open_url_label": "Ingresa URL M3U:",
+    "playlist_filter": "Listas M3U (*.m3u *.m3u8)"
+  },
+  "control": {
+    "mute": "🔇 Silenciar",
+    "unmute": "🔊 Activar sonido",
+    "stop": "■ Detener",
+    "volume_tooltip": "Volumen"
+  },
+  "channel_list": {
+    "search_placeholder": "Buscar canales…",
+    "uncategorized": "Sin categoría",
+    "favorites_header": "⭐ Favoritos",
+    "recent_header": "🕐 Recientes",
+    "add_favorite": "★ Agregar a Favoritos",
+    "remove_favorite": "✕ Quitar de Favoritos",
+    "next": "Siguiente:"
+  },
+  "welcome": {
+    "title": "Bienvenido a IPTV Player",
+    "subtitle": "Crea tu primer perfil para comenzar.",
+    "name_placeholder": "Nombre del perfil",
+    "color_label": "Color de avatar:",
+    "start_button": "Comenzar"
+  },
+  "profile_chooser": {
+    "title": "¿Quién eres?",
+    "add_profile": "+ Agregar perfil"
+  },
+  "profile": {
+    "new_dialog_title": "Nuevo perfil",
+    "settings_dialog_title": "Configurar perfil",
+    "name_label": "Nombre del perfil:",
+    "name_placeholder": "Nombre",
+    "color_label": "Color de avatar:",
+    "rename_label": "Nombre:",
+    "delete_button": "Eliminar perfil",
+    "delete_confirm_title": "Eliminar perfil",
+    "delete_confirm_text": "¿Eliminar '{name}'? Esta acción no se puede deshacer.",
+    "active_tooltip": "Perfil activo: {name}",
+    "new_tooltip": "Nuevo perfil",
+    "settings_tooltip": "Configurar perfil",
+    "default_name": "Mi Perfil"
+  },
+  "about": {
+    "title": "Acerca de",
+    "app_name": "IPTV Player",
+    "version": "Versión {version}",
+    "description": "Reproductor de canales IPTV de código abierto",
+    "license": "Licencia MIT",
+    "donate": "Donar",
+    "ok_button": "Aceptar"
+  },
+  "loading": {
+    "default_text": "Cargando canales…"
+  },
+  "player": {
+    "placeholder": "Selecciona un canal para reproducir"
+  },
+  "parental": {
+    "dialog_title": "Control parental",
+    "action": "Control parental",
+    "pin_config_title": "Configuración de PIN",
+    "current_pin": "PIN actual",
+    "new_pin": "Nuevo PIN",
+    "confirm_pin": "Confirmar PIN",
+    "save": "Guardar",
+    "remove": "Eliminar",
+    "groups": "Grupos",
+    "channels": "Canales",
+    "enter_pin": "Ingrese PIN",
+    "confirm": "Confirmar",
+    "cancel": "Cancelar",
+    "error": {
+      "pin_digits": "El PIN debe tener 4 dígitos numéricos",
+      "pin_mismatch": "Los PIN no coinciden",
+      "current_pin_wrong": "PIN actual incorrecto",
+      "pin_length": "El PIN debe tener 4 dígitos",
+      "incorrect_pin": "PIN incorrecto"
+    }
+  }
+}

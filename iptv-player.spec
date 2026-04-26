@@ -24,8 +24,6 @@ a = Analysis(
     runtime_hooks=[],
     # Excluir modulos pesados que no se usan
     excludes=["tkinter", "matplotlib", "numpy", "scipy", "PIL", "cv2"],
-    win_no_prefer_redirects=False,
-    win_private_assemblies=False,
     cipher=block_cipher,
     noarchive=False,
 )

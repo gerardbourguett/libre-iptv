@@ -9,7 +9,10 @@ on:
 jobs:
   quality:
     name: Lint, tipos y pruebas
-    runs-on: windows-latest
+    strategy:
+      matrix:
+        os: [windows-latest, macos-latest, ubuntu-latest]
+    runs-on: ${{ matrix.os }}
 
     steps:
       - uses: actions/checkout@v4
@@ -23,9 +26,18 @@ jobs:
       - name: Instalar dependencias del proyecto
         run: pip install -e ".[dev]"
 
-      - name: Instalar VLC (requerido por python-vlc)
+      - name: Instalar VLC (Windows)
+        if: runner.os == 'Windows'
         shell: powershell
         run: choco install vlc --yes --no-progress
+
+      - name: Instalar VLC (macOS)
+        if: runner.os == 'macOS'
+        run: brew install --cask vlc
+
+      - name: Instalar VLC (Linux)
+        if: runner.os == 'Linux'
+        run: sudo apt-get update && sudo apt-get install -y vlc
 
       - name: Ruff — linting
         run: ruff check src tests
@@ -36,5 +48,4 @@ jobs:
       - name: Pytest — suite de pruebas
         run: pytest
         env:
-          # Evita que Qt intente abrir una pantalla en el runner headless
           QT_QPA_PLATFORM: offscreen

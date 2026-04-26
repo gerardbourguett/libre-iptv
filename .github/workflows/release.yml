@@ -10,7 +10,7 @@ permissions:
 
 jobs:
   build-windows:
-    name: Construir y publicar release Windows
+    name: Construir release Windows
     runs-on: windows-latest
 
     steps:
@@ -47,14 +47,114 @@ jobs:
             -Path "dist\IPTV-Player" `
             -DestinationPath "IPTV-Player-$ver-windows.zip"
 
-      - name: Publicar release en GitHub
+      - name: Subir artefacto
+        uses: actions/upload-artifact@v4
+        with:
+          name: windows-release
+          path: IPTV-Player-${{ github.ref_name }}-windows.zip
+
+  build-macos:
+    name: Construir release macOS
+    runs-on: macos-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Configurar Python 3.12
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+
+      - name: Instalar VLC (requerido por python-vlc)
+        run: brew install --cask vlc
+
+      - name: Instalar dependencias
+        run: |
+          pip install -e ".[dev]"
+          pip install "pyinstaller>=6.0"
+
+      - name: Ejecutar suite de pruebas
+        run: pytest
+        env:
+          QT_QPA_PLATFORM: offscreen
+
+      - name: Construir .app
+        run: pyinstaller iptv-player-mac.spec
+
+      - name: Comprimir .app
+        run: |
+          ver="${{ github.ref_name }}"
+          cd dist
+          zip -r "../IPTV-Player-${ver}-macos.zip" "IPTV-Player.app"
+
+      - name: Subir artefacto
+        uses: actions/upload-artifact@v4
+        with:
+          name: macos-release
+          path: IPTV-Player-${{ github.ref_name }}-macos.zip
+
+  build-linux:
+    name: Construir release Linux
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Configurar Python 3.12
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+
+      - name: Instalar VLC (requerido por python-vlc)
+        run: sudo apt-get update && sudo apt-get install -y vlc
+
+      - name: Instalar dependencias
+        run: |
+          pip install -e ".[dev]"
+          pip install "pyinstaller>=6.0"
+
+      - name: Ejecutar suite de pruebas
+        run: pytest
+        env:
+          QT_QPA_PLATFORM: offscreen
+
+      - name: Construir ejecutable
+        run: pyinstaller iptv-player-linux.spec
+
+      - name: Comprimir distribución
+        run: |
+          ver="${{ github.ref_name }}"
+          cd dist
+          tar czf "../IPTV-Player-${ver}-linux.tar.gz" IPTV-Player
+
+      - name: Subir artefacto
+        uses: actions/upload-artifact@v4
+        with:
+          name: linux-release
+          path: IPTV-Player-${{ github.ref_name }}-linux.tar.gz
+
+  publish:
+    name: Publicar release en GitHub
+    needs: [build-windows, build-macos, build-linux]
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Descargar artefactos
+        uses: actions/download-artifact@v4
+        with:
+          path: artifacts
+
+      - name: Publicar release
         env:
           GH_TOKEN: ${{ github.token }}
-        shell: bash
         run: |
           VERSION="${{ github.ref_name }}"
           gh release create "$VERSION" \
             --title "IPTV Player $VERSION" \
             --generate-notes \
             --verify-tag \
-            "IPTV-Player-${VERSION}-windows.zip#IPTV Player ${VERSION} — Windows (zip)"
+            artifacts/windows-release/IPTV-Player-${VERSION}-windows.zip#IPTV Player ${VERSION} — Windows \
+            artifacts/macos-release/IPTV-Player-${VERSION}-macos.zip#IPTV Player ${VERSION} — macOS \
+            artifacts/linux-release/IPTV-Player-${VERSION}-linux.tar.gz#IPTV Player ${VERSION} — Linux

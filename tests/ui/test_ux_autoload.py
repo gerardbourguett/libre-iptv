@@ -43,7 +43,7 @@ class TestAutoLoadOnStartup:
         manager.update_playlist(url="http://example.com/list.m3u")
         manager.save_active()
 
-        with patch("src.ui.main_window.PlaylistFetchWorker") as MockWorker:
+        with patch("src.services.playlist_service.PlaylistFetchWorker") as MockWorker:
             instance = MagicMock()
             MockWorker.return_value = instance
             instance.fetched = MagicMock()
