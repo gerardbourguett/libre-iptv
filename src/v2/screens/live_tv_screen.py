@@ -20,14 +20,27 @@ if TYPE_CHECKING:
     from src.services.epg_service import EpgService
 
 
+_BG = "#060810"
+_SURFACE = "#0c0e18"
+_ELEVATED = "#121522"
+_BORDER = "rgba(255,255,255,0.06)"
+_TEXT = "#e8eaf0"
+_DIM = "#555761"
+_SEC = "#9698a0"
+_ACCENT = "#001999"
+
+
 class _LiveChannelList(QListWidget):
     def __init__(self, parent: QWidget | None = None) -> None:
         super().__init__(parent)
         self.setStyleSheet(
-            "QListWidget { border: none; background: #161616; outline: none; }"
-            "QListWidget::item { padding: 8px 12px; color: #e0e0e0; min-height: 24px; }"
-            "QListWidget::item:selected { background: #00bcd4; color: #000000; }"
-            "QListWidget::item:hover:!selected { background: #222222; }"
+            f"QListWidget {{ border: none; background: {_SURFACE}; outline: none;"
+            f"  border-right: 1px solid {_BORDER}; }}"
+            f"QListWidget::item {{ padding: 10px 14px; color: {_TEXT}; min-height: 28px;"
+            f"  border-bottom: 1px solid {_BORDER}; }}"
+            f"QListWidget::item:selected {{ background: rgba(0,25,153,0.15); color: {_TEXT};"
+            f"  border-left: 2px solid {_ACCENT}; }}"
+            f"QListWidget::item:hover:!selected {{ background: rgba(255,255,255,0.03); }}"
         )
 
 
@@ -53,10 +66,12 @@ class LiveTvScreen(QWidget):
 
         self._search = QLineEdit(self)
         self._search.setPlaceholderText("Buscar canal...")
+        self._search.setFixedHeight(40)
         self._search.setStyleSheet(
-            "QLineEdit { background: #1e1e1e; color: #e0e0e0; "
-            "border: 1px solid #2a2a2a; border-radius: 6px; padding: 6px 10px; }"
-            "QLineEdit:focus { border-color: #00bcd4; }"
+            f"QLineEdit {{ background: {_ELEVATED}; color: {_TEXT};"
+            f"  border: none; border-bottom: 1px solid {_BORDER};"
+            f"  padding: 0 14px; font-size: 13px; }}"
+            f"QLineEdit:focus {{ border-bottom: 1px solid {_ACCENT}; }}"
         )
 
         left = QVBoxLayout()
@@ -68,8 +83,8 @@ class LiveTvScreen(QWidget):
         hbox = QHBoxLayout(self)
         hbox.setContentsMargins(0, 0, 0, 0)
         hbox.setSpacing(0)
-        hbox.addLayout(left, 7)
-        hbox.addWidget(self._player, 3)
+        hbox.addLayout(left, 3)
+        hbox.addWidget(self._player, 7)
 
         self._channel_list.itemClicked.connect(self._on_item_clicked)
         self._search.textChanged.connect(self._filter_channels)
