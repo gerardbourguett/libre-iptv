@@ -23,7 +23,7 @@ class TestAboutDialogStructure:
     def test_version_label_exists(self, dialog):
         labels = dialog.findChildren(QLabel)
         texts = [lbl.text() for lbl in labels]
-        assert any("0.2.0" in t for t in texts)
+        assert any("0.3.0" in t for t in texts)
 
     def test_description_label_exists(self, dialog):
         labels = dialog.findChildren(QLabel)

@@ -9,6 +9,7 @@ from PyQt6.QtWidgets import QApplication, QMainWindow
 from src.i18n import init_translator
 from src.models.channel import Channel
 from src.profiles.manager import ProfileManager
+from src.services.playlist_service import PlaylistService
 from src.v2.navigator import ScreenNavigator
 from src.v2.screens.home_screen import HomeScreen
 from src.v2.screens.live_tv_screen import LiveTvScreen
@@ -55,8 +56,8 @@ def main() -> None:
 
     # Screens
     home = HomeScreen()
-    # Sample channels — in production these come from playlist service
-    home.populate([], profile)
+    home.populate([], profile)  # Render immediately; channels arrive via PlaylistService
+
     def on_home_channel_clicked(ch: Channel) -> None:
         navigator.set_play_on_navigate(ch)
         navigator.navigate("live_tv")
@@ -71,6 +72,17 @@ def main() -> None:
 
     # Wire auto-play from navigator to live screen
     navigator.play_requested.connect(live.play_channel)
+
+    # Load playlist from active profile (async for URLs, sync for files)
+    playlist_service = PlaylistService()
+
+    def _on_channels_loaded(loaded: list[Channel]) -> None:
+        home.populate(loaded, profile)
+        live.load_channels(loaded)
+
+    playlist_service.channels_loaded.connect(_on_channels_loaded)
+    if profile:
+        playlist_service.load_profile(profile)
 
     # Global Esc handler for back navigation (skip when search field focused)
     class _EscBackFilter(QObject):
