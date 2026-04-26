@@ -5,6 +5,42 @@ Todos los cambios relevantes de este proyecto se documentan en este archivo.
 El formato está basado en [Keep a Changelog](https://keepachangelog.com/es/1.0.0/),
 y este proyecto sigue [Versionado Semántico](https://semver.org/lang/es/).
 
+## [0.3.0] - 2026-04-26
+
+### Añadido
+
+- **Interfaz Libre IPTV v2** (`main_v2.py`): nueva experiencia de usuario estilo Netflix con navegación por pantallas (`ScreenNavigator`) basada en `QStackedWidget`; el entry point original (`main.py`) se conserva como fallback
+- **HomeScreen**: pantalla de inicio con filas horizontales de canales (*Continuar viendo*, *En vivo*) con scroll horizontal; cada fila se oculta automáticamente si no tiene contenido
+- **LiveTvScreen**: pantalla de TV en vivo con distribución 70/30 (lista de canales | reproductor VLC), zapping con teclas ↑↓, búsqueda por texto en tiempo real, etiqueta EPG "ahora/siguiente" y Escape para volver
+- **Sistema de temas**: 4 temas visuales — Midnight (oscuro azul), Ocean (oscuro teal), Ember (oscuro naranja), Abyss (oscuro púrpura) — aplicados a toda la aplicación vía `QPalette` + stylesheet global; el tema se guarda por perfil
+- **Soporte EPG (Guía Electrónica de Programas)**: parser XMLTV con streaming iterparse y soporte gzip; worker `EpgService` en `QThread`; caché JSON por canal; visualización de programa actual y siguiente en la lista de canales
+- **Internacionalización (i18n)**: sistema de traducción JSON con función `t()`, cambio de idioma en tiempo de ejecución, locales `es.json` y `en.json` con más de 105 claves; scanner AST para detectar cadenas hardcodeadas
+- **Control parental**: PIN con hash SHA-256 salted, bloqueo por canal y por grupo, `PinDialog` con campo enmascarado, panel de administración `ParentalControlsPanel`
+- **Logos de canales**: carga asíncrona con `QThread`, caché LRU en memoria (200 entradas), caché en disco, delegado `QStyledItemDelegate` con círculo de color como fallback
+- **Overlay de carga**: spinner animado sobre el reproductor durante la carga de la lista; estado del menú deshabilitado mientras carga
+- **Notificaciones toast**: mensajes de confirmación/error con auto-dismiss (3 s)
+- **Instancia VLC compartida**: `VlcManager` singleton que gestiona el ciclo de vida de libvlc; inyectado por dependencia en `PlayerWidget` y `GridPlayerWidget`
+- **SourceManager**: gestión de múltiples fuentes M3U por perfil (tipo URL/archivo, activar/desactivar); reemplaza el modelo de una sola playlist por perfil
+- **SettingsManager**: configuración en JSON con escritura atómica y lock de hilo; reemplaza `QSettings`; soporta migración de valores por defecto
+- **CacheSystem**: caché de canales (24 h), EPG (12 h) y logos (disco); validación por TTL y escritura thread-safe
+- **Detección VOD/Series**: el parser M3U clasifica automáticamente canales como live, VOD o serie por palabras clave en nombre/grupo; soporte para `tvg-chno`
+- **Refactorización de ventana principal**: extracción de `MenuBuilder`, `PlaylistService` y `ProfileController` como servicios independientes en `src/services/`
+- **Soporte multiplataforma**: abstracción `src/platform.py` con `platformdirs` para rutas de config/cache/datos; detección automática de VLC en Windows/macOS/Linux; specs PyInstaller para las 3 plataformas; matrix CI en GitHub Actions
+- **Proyecto open source**: licencia MIT, `CONTRIBUTING.md`, `CODE_OF_CONDUCT.md` (Contributor Covenant), `SECURITY.md`, `AboutDialog` con enlaces de donación
+
+### Cambiado
+
+- Los specs de PyInstaller apuntan ahora a `main_v2.py` e incluyen los archivos de localización i18n
+- El ejecutable se distribuye como **Libre-IPTV** en las tres plataformas
+- Versión del proyecto actualizada a `0.3.0`
+
+### Corregido
+
+- `src/models/channel.py` requiere `from __future__ import annotations` para evitar `NameError` en referencias hacia adelante en dataclasses frozen con Python 3.12
+- `main_v2.py`: `manager.save_profile()` incorrecto reemplazado por `manager.save_active()`; lambda override de métodos de instancia reemplazado por subclase `_PersistentNavigator`; firma de `eventFilter` corregida para mypy strict
+- `LiveTvScreen`: propagación de Esc corregida mediante event filter en `_search` (el widget padre no recibe eventos de teclado cuando el hijo `QLineEdit` tiene foco)
+- 9 errores mypy strict en `main_v2.py`, `home_screen.py` y `live_tv_screen.py` resueltos
+
 ## [0.2.0] - 2026-04-12
 
 ### Añadido

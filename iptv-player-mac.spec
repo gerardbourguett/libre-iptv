@@ -1,12 +1,12 @@
 # -*- mode: python ; coding: utf-8 -*-
 #
-# PyInstaller spec para IPTV Player (macOS, .app bundle)
+# PyInstaller spec para Libre IPTV (macOS, .app bundle)
 #
 # Uso:
 #   pyinstaller iptv-player-mac.spec
 #
 # Salida:
-#   dist/IPTV-Player.app
+#   dist/Libre-IPTV.app
 #
 # Requisito en el sistema del usuario final:
 #   VLC Media Player instalado (python-vlc lo busca en tiempo de ejecucion).
@@ -14,10 +14,12 @@
 block_cipher = None
 
 a = Analysis(
-    ["main.py"],
+    ["main_v2.py"],
     pathex=["."],
     binaries=[],
-    datas=[],
+    datas=[
+        ("src/i18n/locales", "src/i18n/locales"),
+    ],
     hiddenimports=["PyQt6.sip"],
     hookspath=[],
     hooksconfig={},
@@ -34,7 +36,7 @@ exe = EXE(
     a.scripts,
     [],
     exclude_binaries=True,
-    name="IPTV-Player",
+    name="Libre-IPTV",
     debug=False,
     bootloader_ignore_signals=False,
     strip=False,
@@ -54,12 +56,12 @@ coll = COLLECT(
     strip=False,
     upx=False,
     upx_exclude=[],
-    name="IPTV-Player",
+    name="Libre-IPTV",
 )
 
 app = BUNDLE(
     coll,
-    name="IPTV-Player.app",
+    name="Libre-IPTV.app",
     icon=None,
-    bundle_identifier="com.gerardbourguett.iptv-player",
+    bundle_identifier="com.gerardbourguett.libre-iptv",
 )

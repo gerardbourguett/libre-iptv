@@ -44,14 +44,14 @@ jobs:
         run: |
           $ver = "${{ github.ref_name }}"
           Compress-Archive `
-            -Path "dist\IPTV-Player" `
-            -DestinationPath "IPTV-Player-$ver-windows.zip"
+            -Path "dist\Libre-IPTV" `
+            -DestinationPath "Libre-IPTV-$ver-windows.zip"
 
       - name: Subir artefacto
         uses: actions/upload-artifact@v4
         with:
           name: windows-release
-          path: IPTV-Player-${{ github.ref_name }}-windows.zip
+          path: Libre-IPTV-${{ github.ref_name }}-windows.zip
 
   build-macos:
     name: Construir release macOS
@@ -86,13 +86,13 @@ jobs:
         run: |
           ver="${{ github.ref_name }}"
           cd dist
-          zip -r "../IPTV-Player-${ver}-macos.zip" "IPTV-Player.app"
+          zip -r "../Libre-IPTV-${ver}-macos.zip" "Libre-IPTV.app"
 
       - name: Subir artefacto
         uses: actions/upload-artifact@v4
         with:
           name: macos-release
-          path: IPTV-Player-${{ github.ref_name }}-macos.zip
+          path: Libre-IPTV-${{ github.ref_name }}-macos.zip
 
   build-linux:
     name: Construir release Linux
@@ -127,13 +127,13 @@ jobs:
         run: |
           ver="${{ github.ref_name }}"
           cd dist
-          tar czf "../IPTV-Player-${ver}-linux.tar.gz" IPTV-Player
+          tar czf "../Libre-IPTV-${ver}-linux.tar.gz" Libre-IPTV
 
       - name: Subir artefacto
         uses: actions/upload-artifact@v4
         with:
           name: linux-release
-          path: IPTV-Player-${{ github.ref_name }}-linux.tar.gz
+          path: Libre-IPTV-${{ github.ref_name }}-linux.tar.gz
 
   publish:
     name: Publicar release en GitHub
@@ -152,9 +152,9 @@ jobs:
         run: |
           VERSION="${{ github.ref_name }}"
           gh release create "$VERSION" \
-            --title "IPTV Player $VERSION" \
+            --title "Libre IPTV $VERSION" \
             --generate-notes \
             --verify-tag \
-            artifacts/windows-release/IPTV-Player-${VERSION}-windows.zip#IPTV Player ${VERSION} — Windows \
-            artifacts/macos-release/IPTV-Player-${VERSION}-macos.zip#IPTV Player ${VERSION} — macOS \
-            artifacts/linux-release/IPTV-Player-${VERSION}-linux.tar.gz#IPTV Player ${VERSION} — Linux
+            artifacts/windows-release/Libre-IPTV-${VERSION}-windows.zip#"Libre IPTV ${VERSION} — Windows" \
+            artifacts/macos-release/Libre-IPTV-${VERSION}-macos.zip#"Libre IPTV ${VERSION} — macOS" \
+            artifacts/linux-release/Libre-IPTV-${VERSION}-linux.tar.gz#"Libre IPTV ${VERSION} — Linux"

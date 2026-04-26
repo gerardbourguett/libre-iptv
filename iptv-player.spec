@@ -1,12 +1,12 @@
 # -*- mode: python ; coding: utf-8 -*-
 #
-# PyInstaller spec para IPTV Player (Windows, onedir)
+# PyInstaller spec para Libre IPTV (Windows, onedir)
 #
 # Uso:
 #   pyinstaller iptv-player.spec
 #
 # Salida:
-#   dist/IPTV-Player/IPTV-Player.exe  (+ dependencias Qt en la misma carpeta)
+#   dist/Libre-IPTV/Libre-IPTV.exe  (+ dependencias Qt en la misma carpeta)
 #
 # Requisito en el sistema del usuario final:
 #   VLC Media Player instalado (python-vlc lo busca en tiempo de ejecucion).
@@ -14,10 +14,12 @@
 block_cipher = None
 
 a = Analysis(
-    ["main.py"],
+    ["main_v2.py"],
     pathex=["."],
     binaries=[],
-    datas=[],
+    datas=[
+        ("src/i18n/locales", "src/i18n/locales"),
+    ],
     hiddenimports=["PyQt6.sip"],
     hookspath=[],
     hooksconfig={},
@@ -35,7 +37,7 @@ exe = EXE(
     a.scripts,
     [],
     exclude_binaries=True,     # onedir: los binarios van a la carpeta COLLECT
-    name="IPTV-Player",
+    name="Libre-IPTV",
     debug=False,
     bootloader_ignore_signals=False,
     strip=False,
@@ -55,5 +57,5 @@ coll = COLLECT(
     strip=False,
     upx=False,
     upx_exclude=[],
-    name="IPTV-Player",
+    name="Libre-IPTV",
 )

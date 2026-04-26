@@ -6,6 +6,7 @@ from PyQt6.QtCore import QEvent, QObject, Qt
 from PyQt6.QtGui import QKeyEvent
 from PyQt6.QtWidgets import QApplication, QMainWindow
 
+from src.i18n import init_translator
 from src.models.channel import Channel
 from src.profiles.manager import ProfileManager
 from src.v2.navigator import ScreenNavigator
@@ -16,6 +17,9 @@ from src.v2.themes import Theme, apply_theme
 
 def main() -> None:
     app = QApplication(sys.argv)
+
+    # Translator must be initialized before any widget that calls t()
+    init_translator()
 
     # Profile manager
     manager = ProfileManager()
