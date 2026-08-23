@@ -5,6 +5,18 @@ Todos los cambios relevantes de este proyecto se documentan en este archivo.
 El formato está basado en [Keep a Changelog](https://keepachangelog.com/es/1.0.0/),
 y este proyecto sigue [Versionado Semántico](https://semver.org/lang/es/).
 
+## [0.3.1] - 2026-08-23
+
+### Corregido
+
+- CI en `main` estaba en rojo desde hacía 4 commits: el paso `ruff check src tests` fallaba primero en el pipeline (142 violaciones acumuladas, en su mayoría en los archivos nuevos de v2), impidiendo que mypy y pytest llegaran a ejecutarse
+- 9 errores de `mypy --strict`, todos con causa real (no solo estrictez de tipos):
+  - `src/v2/screens/import_screen.py`: los campos del formulario Xtream (`_xtream_server`, `_xtream_user`, `_xtream_pass`) se creaban dinámicamente vía `setattr()` dentro de un loop y nunca quedaban asignados como atributos reales de la instancia; reemplazado por un helper tipado con asignación explícita
+  - `src/ui/logo_loader.py`: se pasaba un `QByteArray` de Qt donde `_save_to_disk` esperaba `bytes`; corregido en el punto de llamada (esto también destapó un mock de test que simulaba mal el tipo de retorno real de Qt)
+  - `src/core/xtream_client.py`, `src/v2/nav_rail.py`, `src/v2/screens/profile_screen.py`, `src/v2/screens/import_screen.py`, `src/v2/screens/home_screen.py`: retorno `Any` no narrowed, overrides de `mousePressEvent` con firma incompatible con la clase base, posible `AttributeError` por no descartar `None`, y un `type: ignore` obsoleto
+- `src/platform.py`: el binding de VLC en Linux llamaba a `media_player.set_xid()`, método eliminado en versiones recientes de `python-vlc` y renombrado a `set_xwindow()`; nunca se detectó porque el desarrollo ocurre en Windows y CI nunca llegaba a correr pytest
+- `tests/test_epg_flow.py`: un `QThread` real de `EpgService` combinado con la construcción completa de `MainWindow` provocaba un abort nativo (`Fatal Python error: Aborted`) en el entorno headless de Linux CI; el fetch ahora se ejecuta de forma síncrona en este test
+
 ## [0.3.0] - 2026-04-26
 
 ### Añadido
