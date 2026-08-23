@@ -51,7 +51,7 @@ class PlaylistDialog(QDialog):
         layout.setContentsMargins(24, 20, 24, 16)
 
         # --- Title ---
-        title = QLabel("Elegí el origen de tu lista M3U")
+        title = QLabel("Elige el origen de tu lista M3U")
         title.setStyleSheet("font-size: 15px; font-weight: bold;")
         layout.addWidget(title)
 

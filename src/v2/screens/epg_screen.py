@@ -95,7 +95,7 @@ class EpgScreen(QWidget):
         )
         info_layout.addWidget(tag)
 
-        self._info_title = QLabel("Seleccioná un canal")
+        self._info_title = QLabel("Selecciona un canal")
         self._info_title.setStyleSheet(
             f"color: {_TEXT}; font-size: 18px; font-weight: 700;"
             "background: transparent; border: none;"

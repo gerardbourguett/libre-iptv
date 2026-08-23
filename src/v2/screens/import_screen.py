@@ -28,19 +28,19 @@ _METHOD_META = {
     "file": {
         "icon": "📁",
         "title": "Archivo M3U local",
-        "desc": "Arrastrá o seleccioná un archivo .m3u / .m3u8 desde tu disco",
+        "desc": "Arrastra o selecciona un archivo .m3u / .m3u8 desde tu disco",
         "tags": ["Offline", "Privado"],
     },
     "url": {
         "icon": "🔗",
         "title": "URL de lista M3U",
-        "desc": "Pegá la URL de tu proveedor IPTV. Soporta http y https.",
+        "desc": "Pega la URL de tu proveedor IPTV. Soporta http y https.",
         "tags": ["Auto-actualiza", "Token auth"],
     },
     "xtream": {
         "icon": "⚡",
         "title": "Xtream Codes API",
-        "desc": "Conectá directamente con servidor, usuario y contraseña.",
+        "desc": "Conecta directamente con servidor, usuario y contraseña.",
         "tags": ["EPG incluido", "VOD automático"],
     },
 }
@@ -89,7 +89,7 @@ class ImportScreen(QWidget):
         logo_lbl.setStyleSheet("background: transparent; border: none;")
         center_layout.addWidget(logo_lbl)
 
-        subtitle = QLabel("Añadí tu primera fuente IPTV para comenzar")
+        subtitle = QLabel("Añade tu primera fuente IPTV para comenzar")
         subtitle.setAlignment(Qt.AlignmentFlag.AlignCenter)
         subtitle.setStyleSheet(
             f"color: {_SEC}; font-size: 13px; background: transparent; border: none;"

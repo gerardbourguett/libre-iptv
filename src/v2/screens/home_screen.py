@@ -282,7 +282,7 @@ class HomeScreen(QWidget):
         )
         layout.addWidget(title)
 
-        subtitle = QLabel("Cargá una lista M3U para empezar a ver tus canales.")
+        subtitle = QLabel("Carga una lista M3U para empezar a ver tus canales.")
         subtitle.setAlignment(Qt.AlignmentFlag.AlignCenter)
         subtitle.setStyleSheet(
             f"color: {_SEC}; font-size: 13px; background: transparent; border: none;"
