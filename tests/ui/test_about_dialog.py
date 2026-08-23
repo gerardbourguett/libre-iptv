@@ -1,3 +1,4 @@
+import importlib.metadata
 from unittest.mock import MagicMock
 
 import pytest
@@ -23,7 +24,8 @@ class TestAboutDialogStructure:
     def test_version_label_exists(self, dialog):
         labels = dialog.findChildren(QLabel)
         texts = [lbl.text() for lbl in labels]
-        assert any("0.3.0" in t for t in texts)
+        version = importlib.metadata.version("iptv")
+        assert any(version in t for t in texts)
 
     def test_description_label_exists(self, dialog):
         labels = dialog.findChildren(QLabel)
