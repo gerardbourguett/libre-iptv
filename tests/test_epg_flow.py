@@ -10,6 +10,7 @@ from src.i18n import init_translator
 from src.models.channel import Channel
 from src.models.programme import EpgChannel, Programme
 from src.profiles.manager import ProfileManager
+from src.services.epg_service import EpgFetchWorker
 from src.ui.main_window import MainWindow
 
 
@@ -40,8 +41,16 @@ def mock_vlc():
 
 class TestEpgFlow:
     def test_profile_switch_triggers_epg_fetch_and_channel_list_shows_now_next(
-        self, qtbot: Any, tmp_path: Path, mock_vlc
+        self, qtbot: Any, tmp_path: Path, mock_vlc, monkeypatch: Any
     ) -> None:
+        # Run the worker's fetch synchronously instead of on a real QThread.
+        # A genuine background thread here, combined with the full MainWindow
+        # construction in this test, has caused native aborts in headless
+        # Linux CI (Fatal Python error: Aborted) — the signal-based
+        # assertions below only care that finished/epg_ready fire, which
+        # happens identically either way.
+        monkeypatch.setattr(EpgFetchWorker, "start", EpgFetchWorker.run)
+
         mgr = ProfileManager(base_dir=tmp_path)
         profile = mgr.create_profile("Test", "#00bcd4")
         mgr.update_epg_url(profile.id, "https://example.com/epg.xml")
