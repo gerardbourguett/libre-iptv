@@ -49,7 +49,7 @@ class TestBindVlc:
         [
             ("win32", "set_hwnd"),
             ("darwin", "set_nsobject"),
-            ("linux", "set_xid"),
+            ("linux", "set_xwindow"),
         ],
     )
     def test_calls_correct_method_per_platform(

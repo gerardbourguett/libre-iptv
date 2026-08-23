@@ -26,7 +26,7 @@ def bind_vlc(media_player: Any, win_id: int) -> None:
     elif sys.platform == "darwin":
         media_player.set_nsobject(win_id)
     elif sys.platform == "linux":
-        media_player.set_xid(win_id)
+        media_player.set_xwindow(win_id)
     else:
         raise RuntimeError(f"Unsupported platform: {sys.platform}")
 
