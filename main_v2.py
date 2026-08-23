@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import logging
 import sys
+import urllib.parse
 from datetime import datetime
 
 from PyQt6.QtCore import QEvent, QObject, Qt
@@ -53,6 +54,19 @@ def _build_live_epg_data(
             "end": _format_epg_time(now.stop),
         }
     return data
+
+
+def _build_xtream_playlist_url(server: str, username: str, password: str) -> str:
+    """Build a Xtream Codes get.php M3U-plus URL from server/user/pass."""
+    server = server.rstrip("/")
+    params = {
+        "username": username,
+        "password": password,
+        "type": "m3u_plus",
+        "output": "m3u8",
+    }
+    query = urllib.parse.urlencode(params, quote_via=urllib.parse.quote)
+    return f"{server}/get.php?{query}"
 
 
 def main() -> None:
@@ -140,6 +154,7 @@ def main() -> None:
     search.channel_selected.connect(_play_channel)
 
     settings.close_requested.connect(navigator.go_back)
+    settings.import_requested.connect(lambda: navigator.navigate("import"))
     import_screen.cancelled.connect(navigator.go_back)
 
     def _on_profile_selected(p: object) -> None:
@@ -162,14 +177,57 @@ def main() -> None:
         vod.load_channels(loaded)
         epg.load_channels(loaded)
         search.load_channels(loaded)
+        if navigator.current_screen() == "import":
+            import_screen.set_progress(False)
+            navigator.navigate("home")
 
     def _on_epg_ready() -> None:
         epg.load_channels(channels)
         live.update_epg_data(_build_live_epg_data(channels, epg_service))
 
+    def _on_playlist_error(message: str) -> None:
+        if navigator.current_screen() == "import":
+            import_screen.set_progress(False)
+            import_screen.set_status(message)
+        else:
+            logging.getLogger(__name__).warning("Playlist error: %s", message)
+
+    def _on_import_requested(payload: dict[str, str]) -> None:
+        if profile is None:
+            return
+        method = payload.get("method")
+        if method == "file":
+            path = payload["path"]
+            profile.playlist_path = path
+            profile.playlist_url = ""
+            manager.save_active()
+            import_screen.set_status("")
+            import_screen.set_progress(True)
+            playlist_service.load_file(path)
+        elif method == "url":
+            url = payload["url"]
+            profile.playlist_url = url
+            profile.playlist_path = ""
+            manager.save_active()
+            import_screen.set_status("")
+            import_screen.set_progress(True)
+            playlist_service.load_url(url)
+        elif method == "xtream":
+            url = _build_xtream_playlist_url(
+                payload["server"], payload["username"], payload["password"]
+            )
+            profile.playlist_url = url
+            profile.playlist_path = ""
+            manager.save_active()
+            import_screen.set_status("")
+            import_screen.set_progress(True)
+            playlist_service.load_url(url)
+
     epg_service.epg_ready.connect(_on_epg_ready)
 
     playlist_service.channels_loaded.connect(_on_channels_loaded)
+    playlist_service.fetch_error.connect(_on_playlist_error)
+    import_screen.import_requested.connect(_on_import_requested)
     if profile and (profile.playlist_url or profile.playlist_path):
         home.set_loading(True)
         playlist_service.load_profile(profile)

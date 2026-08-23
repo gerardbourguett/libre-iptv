@@ -32,6 +32,20 @@ class TestPlaylistServiceLoadFile:
             service.load_file("/path/list.m3u")
         assert isinstance(blocker.args[0], str)
 
+    def test_load_file_emits_fetch_error_on_failure(self, qtbot, monkeypatch):
+        """load_file emits fetch_error instead of raising when parsing fails."""
+
+        def _raise(path):
+            raise FileNotFoundError(path)
+
+        monkeypatch.setattr(
+            "src.services.playlist_service.parse_m3u_file", _raise
+        )
+        service = PlaylistService()
+        with qtbot.waitSignal(service.fetch_error, timeout=1000) as blocker:
+            service.load_file("/missing/list.m3u")
+        assert "/missing/list.m3u" in blocker.args[0]
+
 
 class TestPlaylistServiceLoadUrl:
     def test_load_url_creates_worker_and_emits_channels_loaded(

@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from PyQt6.QtCore import pyqtSignal
+from PyQt6.QtCore import Qt, pyqtSignal
 from PyQt6.QtWidgets import (
     QHBoxLayout,
     QLabel,
@@ -32,6 +32,7 @@ _SECTION_KEYS = [k for k, _ in _SECTIONS]
 
 class SettingsScreen(QWidget):
     close_requested = pyqtSignal()
+    import_requested = pyqtSignal()
 
     def __init__(self, parent: QWidget | None = None) -> None:
         super().__init__(parent)
@@ -94,7 +95,10 @@ class SettingsScreen(QWidget):
         self._section_stack = QStackedWidget()
         self._section_stack.setStyleSheet(f"background: {_BG};")
         for key, label in _SECTIONS:
-            self._section_stack.addWidget(self._make_page(key, label))
+            if key == "playlist":
+                self._section_stack.addWidget(self._make_playlist_page(label))
+            else:
+                self._section_stack.addWidget(self._make_page(key, label))
 
         body = QHBoxLayout()
         body.setContentsMargins(0, 0, 0, 0)
@@ -124,6 +128,44 @@ class SettingsScreen(QWidget):
 
     def _request_close(self) -> None:
         self.close_requested.emit()
+
+    def _make_playlist_page(self, title: str) -> QWidget:
+        page = QWidget()
+        page.setStyleSheet(f"background: {_BG};")
+        layout = QVBoxLayout(page)
+        layout.setContentsMargins(32, 28, 32, 28)
+        layout.setSpacing(0)
+
+        tag = QLabel(title.upper())
+        tag.setStyleSheet(
+            f"color: {_DIM}; font-size: 9px; font-weight: 700;"
+            "letter-spacing: 0.15em; background: transparent; border: none;"
+        )
+        layout.addWidget(tag)
+        layout.addSpacing(24)
+
+        desc = QLabel(
+            "Importa una lista M3U desde un archivo local, una URL o una "
+            "cuenta Xtream Codes."
+        )
+        desc.setStyleSheet(
+            f"color: {_SEC}; font-size: 13px; background: transparent; border: none;"
+        )
+        layout.addWidget(desc)
+        layout.addSpacing(20)
+
+        import_btn = QPushButton("Importar nueva lista")
+        import_btn.setFixedHeight(44)
+        import_btn.setStyleSheet(
+            f"background: {_ACCENT}; color: {_TEXT}; border: none;"
+            "padding: 0 20px; font-size: 12px; font-weight: 700; "
+            "letter-spacing: 0.02em;"
+        )
+        import_btn.clicked.connect(self.import_requested.emit)
+        layout.addWidget(import_btn, alignment=Qt.AlignmentFlag.AlignLeft)
+
+        layout.addStretch()
+        return page
 
     @staticmethod
     def _make_page(key: str, title: str) -> QWidget:

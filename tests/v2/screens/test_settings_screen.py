@@ -1,5 +1,8 @@
 from __future__ import annotations
 
+from PyQt6.QtCore import Qt
+from PyQt6.QtWidgets import QPushButton
+
 from src.v2.screens.settings_screen import SettingsScreen
 
 _SECTIONS = ["general", "perfil", "playlist", "epg", "parental", "info"]
@@ -70,4 +73,18 @@ class TestSettingsScreenSignals:
         fired: list[bool] = []
         screen.close_requested.connect(lambda: fired.append(True))
         screen._request_close()
+        assert fired == [True]
+
+    def test_playlist_section_button_emits_import_requested(self, qtbot) -> None:
+        screen = SettingsScreen()
+        qtbot.addWidget(screen)
+        screen.select_section("playlist")
+        fired: list[bool] = []
+        screen.import_requested.connect(lambda: fired.append(True))
+
+        playlist_page = screen._section_stack.currentWidget()
+        button = playlist_page.findChild(QPushButton)
+        assert button is not None
+        qtbot.mouseClick(button, Qt.MouseButton.LeftButton)
+
         assert fired == [True]

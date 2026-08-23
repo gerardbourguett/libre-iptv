@@ -34,7 +34,11 @@ class PlaylistService(QObject):
         self._worker: PlaylistFetchWorker | None = None
 
     def load_file(self, path: str) -> None:
-        channels = parse_m3u_file(path)
+        try:
+            channels = parse_m3u_file(path)
+        except Exception as e:
+            self._on_error(str(e))
+            return
         self.status_message.emit(t("app.status.channels_loaded", count=len(channels)))
         self.channels_loaded.emit(channels)
 
