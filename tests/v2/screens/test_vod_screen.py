@@ -1,12 +1,12 @@
 from __future__ import annotations
 
-import pytest
-
 from src.models.channel import Channel
 from src.v2.screens.vod_screen import VodScreen
 
 
-def _ch(name: str, group: str, *, is_vod: bool = False, is_series: bool = False) -> Channel:
+def _ch(
+    name: str, group: str, *, is_vod: bool = False, is_series: bool = False
+) -> Channel:
     return Channel(
         url=f"http://example.com/{name}",
         name=name,

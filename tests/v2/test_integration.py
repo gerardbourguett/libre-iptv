@@ -1,11 +1,10 @@
 from __future__ import annotations
 
-import pytest
 from PyQt6.QtCore import Qt
 from PyQt6.QtWidgets import QLabel
 
 from src.models.channel import Channel
-from src.models.profile import Profile, UserPrefs
+from src.models.profile import Profile
 from src.v2.navigator import ScreenNavigator
 from src.v2.screens.home_screen import ChannelCard, HomeScreen
 from src.v2.themes import Theme, apply_theme
@@ -160,7 +159,6 @@ class TestEscBackNavigation:
         The global _EscBackFilter catches Esc when no search focus
         and calls navigator.go_back().
         """
-        from PyQt6.QtCore import QObject
         from PyQt6.QtGui import QKeyEvent
 
         nav = ScreenNavigator()

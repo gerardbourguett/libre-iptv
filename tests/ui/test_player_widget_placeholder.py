@@ -34,4 +34,5 @@ class TestPlayerWidgetPlaceholder:
         """S3: Placeholder text uses neutral Spanish."""
         widget = PlayerWidget()
         qtbot.addWidget(widget)
-        assert "Selecciona" in widget._placeholder.text() or "Reproduce" in widget._placeholder.text()
+        placeholder_text = widget._placeholder.text()
+        assert "Selecciona" in placeholder_text or "Reproduce" in placeholder_text

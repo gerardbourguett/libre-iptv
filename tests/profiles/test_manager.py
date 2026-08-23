@@ -229,7 +229,8 @@ class TestParentalBlocking:
         tmp_manager.create_profile("A", "#00bcd4")
         tmp_manager.block_channel("http://cnn.com")
         tmp_manager.unblock_channel("http://cnn.com")
-        assert "http://cnn.com" not in tmp_manager.active_profile().blocked.get("channels", [])
+        blocked_channels = tmp_manager.active_profile().blocked.get("channels", [])
+        assert "http://cnn.com" not in blocked_channels
 
     def test_block_group_adds_name(self, tmp_manager: ProfileManager):
         tmp_manager.create_profile("A", "#00bcd4")

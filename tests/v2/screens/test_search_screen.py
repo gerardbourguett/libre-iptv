@@ -39,7 +39,9 @@ class TestSearchScreenFilter:
     def test_partial_match_returns_results(self, qtbot) -> None:
         screen = SearchScreen()
         qtbot.addWidget(screen)
-        screen.load_channels([_ch("CNN International"), _ch("BBC"), _ch("CNN en Español")])
+        screen.load_channels(
+            [_ch("CNN International"), _ch("BBC"), _ch("CNN en Español")]
+        )
         screen.set_query("CNN")
         assert screen.result_count() == 2
 

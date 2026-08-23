@@ -3,16 +3,14 @@ from __future__ import annotations
 import bisect
 import hashlib
 import json
-import os
 import time
-from dataclasses import asdict
 from pathlib import Path
 from typing import Any
 
 from PyQt6.QtCore import QObject, QThread, pyqtSignal
 
 from src.models.programme import EpgChannel, Programme
-from src.parser.xmltv import XmltvParseError, parse_xmltv_url
+from src.parser.xmltv import parse_xmltv_url
 
 
 class EpgFetchWorker(QThread):
@@ -128,12 +126,16 @@ class EpgService(QObject):
         cache_file = self._cache_file(url)
         data: dict[str, Any] = {
             "url": url,
-            "channels": [{"id": c.id, "names": c.names, "icon": c.icon} for c in channels],
+            "channels": [
+                {"id": c.id, "names": c.names, "icon": c.icon} for c in channels
+            ],
             "programmes": [p.to_dict() for p in programmes],
         }
         cache_file.write_text(json.dumps(data, indent=2), encoding="utf-8")
 
-    def _on_fetch_finished(self, channels: list[EpgChannel], programmes: list[Programme]) -> None:
+    def _on_fetch_finished(
+        self, channels: list[EpgChannel], programmes: list[Programme]
+    ) -> None:
         self._channels = channels
         self._programmes = {}
         for p in programmes:

@@ -5,9 +5,7 @@ import os
 import time
 from pathlib import Path
 from typing import Any
-from unittest.mock import MagicMock, patch
-
-import pytest
+from unittest.mock import patch
 
 from src.models.programme import EpgChannel, Programme
 from src.services.epg_service import EpgService
@@ -19,7 +17,14 @@ class TestEpgCache:
         with patch("src.services.epg_service.parse_xmltv_url") as mock_fetch:
             mock_fetch.return_value = (
                 [EpgChannel(id="ch1", names=["Ch1"])],
-                [Programme(channel="ch1", title="News", start="20260101000000 +0000", stop="20260101010000 +0000")],
+                [
+                    Programme(
+                        channel="ch1",
+                        title="News",
+                        start="20260101000000 +0000",
+                        stop="20260101010000 +0000",
+                    )
+                ],
             )
             with qtbot.waitSignal(service.epg_ready, timeout=2000):
                 service.start("https://example.com/epg.xml")
@@ -32,11 +37,17 @@ class TestEpgCache:
             "url": "https://example.com/epg.xml",
             "channels": [{"id": "ch1", "names": ["Ch1"], "icon": ""}],
             "programmes": [
-                {"channel": "ch1", "title": "News", "start": "20260101000000 +0000", "stop": "20260101010000 +0000", "description": ""}
+                {
+                    "channel": "ch1",
+                    "title": "News",
+                    "start": "20260101000000 +0000",
+                    "stop": "20260101010000 +0000",
+                    "description": "",
+                }
             ],
         }
         from hashlib import sha256
-        key = sha256("https://example.com/epg.xml".encode()).hexdigest()
+        key = sha256(b"https://example.com/epg.xml").hexdigest()
         cache_file = tmp_path / f"{key}.json"
         cache_file.write_text(json.dumps(cache_data), encoding="utf-8")
 
@@ -51,11 +62,17 @@ class TestEpgCache:
             "url": "https://example.com/epg.xml",
             "channels": [{"id": "ch1", "names": ["Ch1"], "icon": ""}],
             "programmes": [
-                {"channel": "ch1", "title": "News", "start": "20260101000000 +0000", "stop": "20260101010000 +0000", "description": ""}
+                {
+                    "channel": "ch1",
+                    "title": "News",
+                    "start": "20260101000000 +0000",
+                    "stop": "20260101010000 +0000",
+                    "description": "",
+                }
             ],
         }
         from hashlib import sha256
-        key = sha256("https://example.com/epg.xml".encode()).hexdigest()
+        key = sha256(b"https://example.com/epg.xml").hexdigest()
         cache_file = tmp_path / f"{key}.json"
         cache_file.write_text(json.dumps(cache_data), encoding="utf-8")
         # Set mtime to 48 hours ago
@@ -65,7 +82,14 @@ class TestEpgCache:
         with patch("src.services.epg_service.parse_xmltv_url") as mock_fetch:
             mock_fetch.return_value = (
                 [EpgChannel(id="ch1", names=["Ch1"])],
-                [Programme(channel="ch1", title="News", start="20260101000000 +0000", stop="20260101010000 +0000")],
+                [
+                    Programme(
+                        channel="ch1",
+                        title="News",
+                        start="20260101000000 +0000",
+                        stop="20260101010000 +0000",
+                    )
+                ],
             )
             with qtbot.waitSignal(service.epg_ready, timeout=2000):
                 service.start("https://example.com/epg.xml")
@@ -77,18 +101,31 @@ class TestEpgCache:
             "url": "https://old.com/epg.xml",
             "channels": [{"id": "ch1", "names": ["Ch1"], "icon": ""}],
             "programmes": [
-                {"channel": "ch1", "title": "News", "start": "20260101000000 +0000", "stop": "20260101010000 +0000", "description": ""}
+                {
+                    "channel": "ch1",
+                    "title": "News",
+                    "start": "20260101000000 +0000",
+                    "stop": "20260101010000 +0000",
+                    "description": "",
+                }
             ],
         }
         from hashlib import sha256
-        key = sha256("https://old.com/epg.xml".encode()).hexdigest()
+        key = sha256(b"https://old.com/epg.xml").hexdigest()
         cache_file = tmp_path / f"{key}.json"
         cache_file.write_text(json.dumps(cache_data), encoding="utf-8")
 
         with patch("src.services.epg_service.parse_xmltv_url") as mock_fetch:
             mock_fetch.return_value = (
                 [EpgChannel(id="ch2", names=["Ch2"])],
-                [Programme(channel="ch2", title="Sports", start="20260101000000 +0000", stop="20260101010000 +0000")],
+                [
+                    Programme(
+                        channel="ch2",
+                        title="Sports",
+                        start="20260101000000 +0000",
+                        stop="20260101010000 +0000",
+                    )
+                ],
             )
             with qtbot.waitSignal(service.epg_ready, timeout=2000):
                 service.start("https://new.com/epg.xml")

@@ -4,7 +4,6 @@ import hashlib
 import json
 import time
 from pathlib import Path
-from typing import Any
 
 from src.models.channel import Channel
 from src.models.programme import EpgChannel, Programme

@@ -1,9 +1,6 @@
 from __future__ import annotations
 
 from dataclasses import dataclass, field
-from typing import Any
-
-import pytest
 
 from src.core.parental import get_blocked_sets, hash_pin, is_channel_blocked, verify_pin
 from src.models.channel import Channel
@@ -134,7 +131,10 @@ class TestGetBlockedSets:
     def test_extracts_channels_and_groups(self) -> None:
         """Correctly extracts blocked URLs and group names."""
         profile = _FakeProfile(
-            blocked={"channels": ["http://a.com", "http://b.com"], "groups": ["X", "Y"]},
+            blocked={
+                "channels": ["http://a.com", "http://b.com"],
+                "groups": ["X", "Y"],
+            },
         )
         urls, groups = get_blocked_sets(profile)
         assert urls == frozenset(["http://a.com", "http://b.com"])

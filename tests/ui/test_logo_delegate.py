@@ -2,7 +2,6 @@ from __future__ import annotations
 
 from unittest.mock import MagicMock
 
-import pytest
 from PyQt6.QtCore import QRect, Qt
 from PyQt6.QtGui import QPainter, QPixmap
 from PyQt6.QtWidgets import QListWidget, QListWidgetItem, QStyle, QStyleOptionViewItem
@@ -23,7 +22,9 @@ class TestChannelLogoDelegateSizeHint:
         widget = QListWidget()
         qtbot.addWidget(widget)
         item = QListWidgetItem()
-        item.setData(Qt.ItemDataRole.UserRole, Channel(url="http://a.com", name="A Channel"))
+        item.setData(
+            Qt.ItemDataRole.UserRole, Channel(url="http://a.com", name="A Channel")
+        )
         widget.addItem(item)
         index = widget.indexFromItem(item)
 
@@ -72,7 +73,11 @@ class TestChannelLogoDelegatePaintFallback:
         delegate.paint(painter, option, index)
 
         # Should draw a rounded rect / ellipse (fallback circle)
-        assert painter.drawRoundedRect.called or painter.drawEllipse.called or painter.drawPixmap.called
+        assert (
+            painter.drawRoundedRect.called
+            or painter.drawEllipse.called
+            or painter.drawPixmap.called
+        )
 
     def test_paint_fallback_uses_channel_initial(self, qtbot):
         """S4: fallback draws the first character of the channel name."""

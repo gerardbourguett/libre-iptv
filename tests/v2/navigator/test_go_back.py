@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import pytest
 from PyQt6.QtWidgets import QLabel
 
 from src.v2.navigator import ScreenNavigator

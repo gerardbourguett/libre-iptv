@@ -4,9 +4,7 @@ from pathlib import Path
 
 import pytest
 
-from src.models.programme import EpgChannel, Programme
-from src.parser.xmltv import parse_xmltv, XmltvParseError
-
+from src.parser.xmltv import XmltvParseError, parse_xmltv
 
 _VALID_XMLTV = """<?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE tv SYSTEM "xmltv.dtd">
@@ -131,7 +129,10 @@ class TestParseXmltvEdgeCases:
 class TestParseXmltvGzip:
     def test_gzip_file_decompression(self, tmp_path: Path) -> None:
         import gzip
-        xml = '<?xml version="1.0"?><tv><channel id="ch1"><display-name>Ch1</display-name></channel></tv>'
+        xml = (
+            '<?xml version="1.0"?><tv><channel id="ch1">'
+            "<display-name>Ch1</display-name></channel></tv>"
+        )
         gz_path = tmp_path / "epg.xml.gz"
         gz_path.write_bytes(gzip.compress(xml.encode("utf-8")))
         channels, programmes = parse_xmltv(str(gz_path))

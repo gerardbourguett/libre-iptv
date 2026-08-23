@@ -1,9 +1,6 @@
 from __future__ import annotations
 
-import pytest
-from PyQt6.QtCore import Qt
-from PyQt6.QtGui import QColor, QPalette
-from PyQt6.QtWidgets import QApplication
+from PyQt6.QtGui import QPalette
 
 from src.v2.themes import Theme, apply_theme
 

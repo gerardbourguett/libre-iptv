@@ -1,7 +1,5 @@
 from __future__ import annotations
 
-import pytest
-
 from src.v2.dialogs.playlist_dialog import PlaylistDialog
 
 

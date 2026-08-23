@@ -1,14 +1,11 @@
 from __future__ import annotations
 
-import gzip
 import time
 from pathlib import Path
 
-import pytest
-
+from src.core.cache import ChannelCache, EpgCache, LogoCache
 from src.models.channel import Channel
 from src.models.programme import EpgChannel, Programme
-from src.core.cache import ChannelCache, EpgCache, LogoCache
 
 
 class TestChannelCache:
@@ -50,7 +47,14 @@ class TestEpgCache:
     def test_put_and_get(self, tmp_path: Path) -> None:
         cache = EpgCache(cache_dir=tmp_path)
         channels = [EpgChannel(id="bbc1", names=["BBC One"])]
-        programmes = [Programme(channel="bbc1", title="News", start="20260101000000 +0000", stop="20260101010000 +0000")]
+        programmes = [
+            Programme(
+                channel="bbc1",
+                title="News",
+                start="20260101000000 +0000",
+                stop="20260101010000 +0000",
+            )
+        ]
         cache.put("src1", channels, programmes)
         result = cache.get("src1")
         assert result is not None
@@ -61,7 +65,14 @@ class TestEpgCache:
     def test_get_returns_none_when_expired(self, tmp_path: Path) -> None:
         cache = EpgCache(cache_dir=tmp_path)
         channels = [EpgChannel(id="bbc1", names=["BBC One"])]
-        programmes = [Programme(channel="bbc1", title="News", start="20260101000000 +0000", stop="20260101010000 +0000")]
+        programmes = [
+            Programme(
+                channel="bbc1",
+                title="News",
+                start="20260101000000 +0000",
+                stop="20260101010000 +0000",
+            )
+        ]
         cache.put("src1", channels, programmes)
         # Manually set timestamp to 13 hours ago
         cache_file = tmp_path / "epg" / "src1.json"
@@ -80,7 +91,14 @@ class TestEpgCache:
     def test_invalidate_removes_cache(self, tmp_path: Path) -> None:
         cache = EpgCache(cache_dir=tmp_path)
         channels = [EpgChannel(id="bbc1", names=["BBC One"])]
-        programmes = [Programme(channel="bbc1", title="News", start="20260101000000 +0000", stop="20260101010000 +0000")]
+        programmes = [
+            Programme(
+                channel="bbc1",
+                title="News",
+                start="20260101000000 +0000",
+                stop="20260101010000 +0000",
+            )
+        ]
         cache.put("src1", channels, programmes)
         cache.invalidate("src1")
         assert cache.get("src1") is None
@@ -110,5 +128,5 @@ class TestLogoCache:
         logo_data = b"\x89PNG\r\n\x1a\nfakepng"
         cache.put("http://logo.png", logo_data)
         import hashlib
-        expected_hash = hashlib.sha256("http://logo.png".encode()).hexdigest()[:16]
+        expected_hash = hashlib.sha256(b"http://logo.png").hexdigest()[:16]
         assert (tmp_path / "logos" / f"{expected_hash}.png").exists()

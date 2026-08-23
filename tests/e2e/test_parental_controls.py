@@ -4,12 +4,10 @@ from pathlib import Path
 from unittest.mock import MagicMock
 
 import pytest
-from PyQt6.QtCore import Qt
 
 from src.i18n import init_translator
 from src.models.channel import Channel
 from src.profiles.manager import ProfileManager
-from src.ui.channel_list import ChannelListWidget
 from src.ui.main_window import MainWindow
 from src.ui.pin_dialog import PinDialog
 
@@ -50,12 +48,13 @@ class TestBlockedChannelFlow:
         cnn_item = main_window._channel_list.item(1)
         assert "🔒" in cnn_item.text()
 
-    def test_select_blocked_channel_shows_pin_dialog(self, main_window, qtbot, monkeypatch):
+    def test_select_blocked_channel_shows_pin_dialog(
+        self, main_window, qtbot, monkeypatch
+    ):
         main_window._manager.block_channel("http://cnn.com")
         main_window._reload_channel_list()
 
         dialog_shown = []
-        original_exec = PinDialog.exec
 
         def mock_exec(self):
             dialog_shown.append(True)

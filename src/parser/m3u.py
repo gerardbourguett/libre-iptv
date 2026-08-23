@@ -1,4 +1,3 @@
-import hashlib
 import logging
 import re
 import urllib.request
@@ -11,7 +10,9 @@ logger = logging.getLogger(__name__)
 
 _ATTR_RE = re.compile(r'([\w-]+)="([^"]*)"')
 
-_VOD_KEYWORDS = {"movie", "pelicula", "película", "películas", "pélicula", "film", "vod"}
+_VOD_KEYWORDS = {
+    "movie", "pelicula", "película", "películas", "pélicula", "film", "vod",
+}
 _SERIES_KEYWORDS = {"series", "serie", "shows"}
 
 

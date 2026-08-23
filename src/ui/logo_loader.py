@@ -152,7 +152,7 @@ class LogoLoader(QObject):
                 self._cache.put(url, LogoLoader._FAILED)
             else:
                 self._cache.put(url, pixmap)
-                self._save_to_disk(url, data)
+                self._save_to_disk(url, data.data())
 
         self.logo_loaded.emit(url)
 

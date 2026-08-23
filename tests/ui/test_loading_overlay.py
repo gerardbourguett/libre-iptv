@@ -1,4 +1,3 @@
-import pytest
 
 from src.ui.loading_overlay import LoadingOverlay
 

@@ -1,5 +1,4 @@
 import logging
-from pathlib import Path
 from unittest.mock import patch
 
 import pytest
@@ -49,7 +48,9 @@ class TestTranslatorFallback:
         assert result == "Confirmar"
         assert "dialog.confirm" in caplog.text
 
-    def test_missing_key_in_both_locales_returns_raw_key_with_error(self, translator, caplog):
+    def test_missing_key_in_both_locales_returns_raw_key_with_error(
+        self, translator, caplog
+    ):
         translator.set_language("en")
         with caplog.at_level(logging.ERROR):
             result = translator.t("nonexistent.key")

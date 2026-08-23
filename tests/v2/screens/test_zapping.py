@@ -9,7 +9,6 @@ from src.v2.screens.live_tv_screen import LiveTvScreen
 
 @pytest.fixture(autouse=True)
 def patch_vlc_and_translator(monkeypatch):
-    import vlc
     class FakePlayer:
         def set_media(self, m): ...
         def play(self): ...

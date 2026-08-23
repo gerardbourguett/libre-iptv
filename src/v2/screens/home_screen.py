@@ -34,7 +34,7 @@ _PALETTE = [
 ]
 
 
-def _channel_color(ch: Channel) -> str:  # type: ignore[return]
+def _channel_color(ch: Channel) -> str:
     idx = sum(ord(c) for c in ch.name) % len(_PALETTE)
     return _PALETTE[idx]
 
@@ -154,7 +154,7 @@ class ChannelRow(QWidget):
         self._scroll.setVerticalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
         self._scroll.setWidgetResizable(True)
         self._scroll.setStyleSheet(
-            f"QScrollArea {{ border: none; background: transparent; }}"
+            "QScrollArea { border: none; background: transparent; }"
         )
         self._scroll.setFixedHeight(120)
 

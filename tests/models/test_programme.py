@@ -47,7 +47,12 @@ class TestProgramme:
         assert p.description == ""
 
     def test_frozen(self) -> None:
-        p = Programme(channel="x", title="T", start="20260101000000 +0000", stop="20260101010000 +0000")
+        p = Programme(
+            channel="x",
+            title="T",
+            start="20260101000000 +0000",
+            stop="20260101010000 +0000",
+        )
         with pytest.raises(AttributeError):
             p.title = "Y"
 
@@ -109,11 +114,21 @@ class TestProgrammeSerialization:
         assert restored == original
 
     def test_category_defaults_empty(self) -> None:
-        p = Programme(channel="x", title="T", start="20260101000000 +0000", stop="20260101010000 +0000")
+        p = Programme(
+            channel="x",
+            title="T",
+            start="20260101000000 +0000",
+            stop="20260101010000 +0000",
+        )
         assert p.category == ""
 
     def test_icon_defaults_empty(self) -> None:
-        p = Programme(channel="x", title="T", start="20260101000000 +0000", stop="20260101010000 +0000")
+        p = Programme(
+            channel="x",
+            title="T",
+            start="20260101000000 +0000",
+            stop="20260101010000 +0000",
+        )
         assert p.icon == ""
 
     def test_category_and_icon_can_be_set(self) -> None:

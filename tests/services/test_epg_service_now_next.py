@@ -2,8 +2,6 @@ from __future__ import annotations
 
 from typing import Any
 
-import pytest
-
 from src.models.programme import Programme
 from src.services.epg_service import EpgService
 
@@ -20,9 +18,24 @@ class TestEpgServiceNowNext:
         # Seed programmes directly
         service._programmes = {
             "bbc1": [
-                Programme(channel="bbc1", title="Morning", start="20260425060000 +0000", stop="20260425070000 +0000"),
-                Programme(channel="bbc1", title="News", start="20260425070000 +0000", stop="20260425080000 +0000"),
-                Programme(channel="bbc1", title="Documentary", start="20260425080000 +0000", stop="20260425090000 +0000"),
+                Programme(
+                    channel="bbc1",
+                    title="Morning",
+                    start="20260425060000 +0000",
+                    stop="20260425070000 +0000",
+                ),
+                Programme(
+                    channel="bbc1",
+                    title="News",
+                    start="20260425070000 +0000",
+                    stop="20260425080000 +0000",
+                ),
+                Programme(
+                    channel="bbc1",
+                    title="Documentary",
+                    start="20260425080000 +0000",
+                    stop="20260425090000 +0000",
+                ),
             ]
         }
         # Mock current time to 07:30 UTC
@@ -36,11 +49,18 @@ class TestEpgServiceNowNext:
         assert next_prog is not None
         assert next_prog.title == "Documentary"
 
-    def test_before_first_programme_returns_none_and_first(self, monkeypatch: Any) -> None:
+    def test_before_first_programme_returns_none_and_first(
+        self, monkeypatch: Any
+    ) -> None:
         service = EpgService(cache_dir=None, refresh_hours=24)
         service._programmes = {
             "ch1": [
-                Programme(channel="ch1", title="First", start="20260425100000 +0000", stop="20260425110000 +0000"),
+                Programme(
+                    channel="ch1",
+                    title="First",
+                    start="20260425100000 +0000",
+                    stop="20260425110000 +0000",
+                ),
             ]
         }
         monkeypatch.setattr(
@@ -56,7 +76,12 @@ class TestEpgServiceNowNext:
         service = EpgService(cache_dir=None, refresh_hours=24)
         service._programmes = {
             "ch1": [
-                Programme(channel="ch1", title="Last", start="20260425100000 +0000", stop="20260425110000 +0000"),
+                Programme(
+                    channel="ch1",
+                    title="Last",
+                    start="20260425100000 +0000",
+                    stop="20260425110000 +0000",
+                ),
             ]
         }
         monkeypatch.setattr(

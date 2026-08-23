@@ -36,11 +36,12 @@ class _LiveChannelList(QListWidget):
         self.setStyleSheet(
             f"QListWidget {{ border: none; background: {_SURFACE}; outline: none;"
             f"  border-right: 1px solid {_BORDER}; }}"
-            f"QListWidget::item {{ padding: 10px 14px; color: {_TEXT}; min-height: 28px;"
-            f"  border-bottom: 1px solid {_BORDER}; }}"
-            f"QListWidget::item:selected {{ background: rgba(0,25,153,0.15); color: {_TEXT};"
-            f"  border-left: 2px solid {_ACCENT}; }}"
-            f"QListWidget::item:hover:!selected {{ background: rgba(255,255,255,0.03); }}"
+            f"QListWidget::item {{ padding: 10px 14px; color: {_TEXT};"
+            f"  min-height: 28px; border-bottom: 1px solid {_BORDER}; }}"
+            f"QListWidget::item:selected {{ background: rgba(0,25,153,0.15);"
+            f"  color: {_TEXT}; border-left: 2px solid {_ACCENT}; }}"
+            f"QListWidget::item:hover:!selected"
+            f" {{ background: rgba(255,255,255,0.03); }}"
         )
 
 

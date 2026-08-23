@@ -31,7 +31,7 @@ class _ProfileCard(QFrame):
         self._profile = profile
         self.setFixedSize(120, 150)
         self.setStyleSheet(
-            f"QFrame {{ background: transparent; border: none; }}"
+            "QFrame { background: transparent; border: none; }"
         )
         layout = QVBoxLayout(self)
         layout.setContentsMargins(8, 8, 8, 8)
@@ -77,7 +77,7 @@ class _AddCard(QFrame):
         super().__init__(parent)
         self.setFixedSize(120, 150)
         self.setStyleSheet(
-            f"QFrame {{ background: transparent; border: none; }}"
+            "QFrame { background: transparent; border: none; }"
         )
         layout = QVBoxLayout(self)
         layout.setContentsMargins(8, 8, 8, 8)
@@ -88,8 +88,8 @@ class _AddCard(QFrame):
         plus.setAlignment(Qt.AlignmentFlag.AlignCenter)
         plus.setFixedSize(88, 88)
         plus.setStyleSheet(
-            f"background: transparent; color: {_DIM}; font-size: 32px; font-weight: 400;"
-            f"border: 1px dashed {_BORDER};"
+            f"background: transparent; color: {_DIM}; font-size: 32px;"
+            f"font-weight: 400; border: 1px dashed {_BORDER};"
         )
         layout.addWidget(plus, alignment=Qt.AlignmentFlag.AlignCenter)
 
@@ -187,7 +187,7 @@ class ProfileScreen(QWidget):
         scroll.setHorizontalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAsNeeded)
         scroll.setVerticalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
         scroll.setStyleSheet(
-            f"QScrollArea {{ border: none; background: transparent; }}"
+            "QScrollArea { border: none; background: transparent; }"
             "QScrollBar:horizontal { height: 0px; }"
         )
         scroll.setWidget(self._cards_widget)
@@ -232,8 +232,9 @@ class ProfileScreen(QWidget):
     def _rebuild(self, profiles: list[Profile] | None = None) -> None:
         while self._cards_layout.count():
             item = self._cards_layout.takeAt(0)
-            if item and item.widget():
-                item.widget().setParent(None)
+            widget = item.widget() if item else None
+            if widget is not None:
+                widget.setParent(None)
 
         self._cards.clear()
 

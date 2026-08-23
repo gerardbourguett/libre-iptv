@@ -1,9 +1,9 @@
 from __future__ import annotations
 
-from unittest.mock import MagicMock, patch
+from unittest.mock import MagicMock
 
 import pytest
-from PyQt6.QtCore import QUrl
+from PyQt6.QtCore import QByteArray
 from PyQt6.QtGui import QPixmap
 from PyQt6.QtNetwork import QNetworkAccessManager, QNetworkReply, QNetworkRequest
 
@@ -125,7 +125,6 @@ class TestLogoLoaderDiskPersistence:
 
     def test_download_saves_to_disk(self, qtbot, disk_loader, tmp_path):
         """Logo downloaded from network is saved to disk cache."""
-        from src.ui.logo_loader import LogoLoader
         from PyQt6.QtCore import QBuffer, QIODevice
 
         url = "http://example.com/logo.png"
@@ -139,7 +138,7 @@ class TestLogoLoaderDiskPersistence:
         mock_nam = MagicMock(spec=QNetworkAccessManager)
         mock_reply = MagicMock(spec=QNetworkReply)
         mock_reply.error.return_value = QNetworkReply.NetworkError.NoError
-        mock_reply.readAll.return_value = png_bytes
+        mock_reply.readAll.return_value = QByteArray(png_bytes)
         mock_nam.get.return_value = mock_reply
         disk_loader._nam = mock_nam
 

@@ -102,7 +102,9 @@ class Profile:
     @staticmethod
     def from_dict(data: dict[str, Any]) -> Profile:
         history_data = data.get("history", [])
-        history = [HistoryEntry.from_dict(h) for h in history_data] if history_data else []
+        history = (
+            [HistoryEntry.from_dict(h) for h in history_data] if history_data else []
+        )
         prefs_data = data.get("prefs")
         prefs = UserPrefs.from_dict(prefs_data) if prefs_data else UserPrefs()
         return Profile(

@@ -8,7 +8,6 @@ from src.v2.screens.live_tv_screen import LiveTvScreen
 
 @pytest.fixture(autouse=True)
 def patch_vlc_and_translator(monkeypatch):
-    import vlc
     class FakePlayer:
         def set_media(self, m): ...
         def play(self): ...
@@ -30,7 +29,9 @@ def patch_vlc_and_translator(monkeypatch):
 class TestEpgSublabel:
     def test_shows_programme_when_epg_present(self, qtbot):
         channels = [Channel(url="http://a.com", name="CNN", tvg_id="cnn")]
-        epg_data = {"cnn": {"now_title": "Noticias 12", "start": "12:00", "end": "13:00"}}
+        epg_data = {
+            "cnn": {"now_title": "Noticias 12", "start": "12:00", "end": "13:00"}
+        }
         screen = LiveTvScreen(channels, epg_data=epg_data)
         qtbot.addWidget(screen)
         item = screen._channel_list.item(0)

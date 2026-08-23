@@ -2,7 +2,6 @@ from __future__ import annotations
 
 from pathlib import Path
 
-from src.models.profile import Profile
 from src.profiles.manager import ProfileManager
 
 

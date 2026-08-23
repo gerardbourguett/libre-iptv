@@ -5,8 +5,7 @@ from unittest.mock import MagicMock, patch
 import pytest
 
 from src.models.programme import EpgChannel, Programme
-from src.parser.xmltv import parse_xmltv_url, XmltvParseError
-
+from src.parser.xmltv import XmltvParseError, parse_xmltv_url
 
 _XMLTV_SAMPLE = """<?xml version="1.0"?>
 <tv>
@@ -20,7 +19,9 @@ _XMLTV_SAMPLE = """<?xml version="1.0"?>
 
 class TestParseXmltvUrl:
     @patch("urllib.request.urlopen")
-    def test_fetch_and_parse_returns_channels_and_programmes(self, mock_urlopen: MagicMock) -> None:
+    def test_fetch_and_parse_returns_channels_and_programmes(
+        self, mock_urlopen: MagicMock
+    ) -> None:
         mock_response = MagicMock()
         mock_response.read.return_value = _XMLTV_SAMPLE.encode("utf-8")
         mock_urlopen.return_value.__enter__.return_value = mock_response
@@ -58,7 +59,9 @@ class TestParseXmltvUrl:
         assert "URL error" in str(exc_info.value)
 
     @patch("urllib.request.urlopen")
-    def test_invalid_xml_from_url_raises_xmltv_parse_error(self, mock_urlopen: MagicMock) -> None:
+    def test_invalid_xml_from_url_raises_xmltv_parse_error(
+        self, mock_urlopen: MagicMock
+    ) -> None:
         mock_response = MagicMock()
         mock_response.read.return_value = b"not xml"
         mock_urlopen.return_value.__enter__.return_value = mock_response

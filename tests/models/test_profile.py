@@ -1,7 +1,5 @@
 from __future__ import annotations
 
-import pytest
-
 from src.models.profile import HistoryEntry, Profile, UserPrefs
 
 
@@ -77,7 +75,9 @@ class TestProfileSerializationParental:
 
 class TestHistoryEntry:
     def test_basic_fields(self) -> None:
-        entry = HistoryEntry(channel_id="abc123", watched_at="2026-04-26T12:00:00Z", duration_s=3600)
+        entry = HistoryEntry(
+            channel_id="abc123", watched_at="2026-04-26T12:00:00Z", duration_s=3600
+        )
         assert entry.channel_id == "abc123"
         assert entry.watched_at == "2026-04-26T12:00:00Z"
         assert entry.duration_s == 3600
@@ -99,7 +99,13 @@ class TestUserPrefs:
         assert prefs.last_channel == ""
 
     def test_custom_values(self) -> None:
-        prefs = UserPrefs(theme="dark", accent_color="#ff0000", volume=80, subtitle_lang="es", last_channel="ch1")
+        prefs = UserPrefs(
+            theme="dark",
+            accent_color="#ff0000",
+            volume=80,
+            subtitle_lang="es",
+            last_channel="ch1",
+        )
         assert prefs.theme == "dark"
         assert prefs.accent_color == "#ff0000"
         assert prefs.volume == 80
@@ -118,7 +124,11 @@ class TestProfileHistoryAndPrefs:
         assert p.prefs.volume == 100
 
     def test_can_set_history(self) -> None:
-        hist = [HistoryEntry(channel_id="abc", watched_at="2026-04-26T12:00:00Z", duration_s=300)]
+        hist = [
+            HistoryEntry(
+                channel_id="abc", watched_at="2026-04-26T12:00:00Z", duration_s=300
+            )
+        ]
         p = Profile(id="x", name="N", color="#00bcd4", history=hist)
         assert p.history == hist
 
@@ -131,19 +141,42 @@ class TestProfileHistoryAndPrefs:
 
 class TestProfileSerializationHistoryPrefs:
     def test_to_dict_includes_history_and_prefs(self) -> None:
-        hist = [HistoryEntry(channel_id="abc", watched_at="2026-04-26T12:00:00Z", duration_s=300)]
+        hist = [
+            HistoryEntry(
+                channel_id="abc", watched_at="2026-04-26T12:00:00Z", duration_s=300
+            )
+        ]
         prefs = UserPrefs(theme="dark", volume=75)
         p = Profile(id="x", name="N", color="#00bcd4", history=hist, prefs=prefs)
         d = p.to_dict()
-        assert d["history"] == [{"channel_id": "abc", "watched_at": "2026-04-26T12:00:00Z", "duration_s": 300}]
-        assert d["prefs"] == {"theme": "dark", "accent_color": "", "volume": 75, "subtitle_lang": "", "last_channel": "", "last_screen": "home"}
+        assert d["history"] == [
+            {
+                "channel_id": "abc",
+                "watched_at": "2026-04-26T12:00:00Z",
+                "duration_s": 300,
+            }
+        ]
+        assert d["prefs"] == {
+            "theme": "dark",
+            "accent_color": "",
+            "volume": 75,
+            "subtitle_lang": "",
+            "last_channel": "",
+            "last_screen": "home",
+        }
 
     def test_from_dict_with_history_and_prefs(self) -> None:
         d = {
             "id": "x",
             "name": "N",
             "color": "#00bcd4",
-            "history": [{"channel_id": "abc", "watched_at": "2026-04-26T12:00:00Z", "duration_s": 300}],
+            "history": [
+                {
+                    "channel_id": "abc",
+                    "watched_at": "2026-04-26T12:00:00Z",
+                    "duration_s": 300,
+                }
+            ],
             "prefs": {"theme": "dark", "volume": 75},
         }
         p = Profile.from_dict(d)
@@ -170,7 +203,11 @@ class TestProfileSerializationHistoryPrefs:
         assert p.prefs.volume == 100
 
     def test_roundtrip_with_history_and_prefs(self) -> None:
-        hist = [HistoryEntry(channel_id="abc", watched_at="2026-04-26T12:00:00Z", duration_s=300)]
+        hist = [
+            HistoryEntry(
+                channel_id="abc", watched_at="2026-04-26T12:00:00Z", duration_s=300
+            )
+        ]
         prefs = UserPrefs(theme="dark", volume=75)
         p = Profile(id="x", name="N", color="#00bcd4", history=hist, prefs=prefs)
         restored = Profile.from_dict(p.to_dict())

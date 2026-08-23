@@ -147,7 +147,9 @@ class ImportScreen(QWidget):
             f"color: {_DIM}; font-size: 10px; letter-spacing: 0.08em;"
             "background: transparent; border: none; padding-top: 16px;"
         )
-        skip_lbl.mousePressEvent = lambda _: self.cancelled.emit()  # type: ignore[method-assign]
+        skip_lbl.mousePressEvent = (  # type: ignore[method-assign]
+            lambda ev: self.cancelled.emit()
+        )
         center_layout.addSpacing(8)
         center_layout.addWidget(skip_lbl)
 
@@ -186,7 +188,7 @@ class ImportScreen(QWidget):
 
         # Method-specific inputs
         self._stack = QStackedWidget()
-        self._stack.setStyleSheet(f"background: transparent;")
+        self._stack.setStyleSheet("background: transparent;")
 
         # Page 0: File
         file_page = QWidget()
@@ -272,25 +274,31 @@ class ImportScreen(QWidget):
         xp_layout.addWidget(xp_title)
         xp_layout.addSpacing(8)
 
-        for field_label, placeholder, attr in [
-            ("SERVIDOR", "http://proveedor.com:8080", "_xtream_server"),
-            ("USUARIO", "tu_usuario", "_xtream_user"),
-            ("CONTRASEÑA", "••••••••", "_xtream_pass"),
-        ]:
+        def _add_xtream_field(
+            field_label: str, placeholder: str, *, is_password: bool = False
+        ) -> QLineEdit:
             lbl = QLabel(field_label)
             lbl.setStyleSheet(
-                f"color: {_DIM}; font-size: 9px; font-weight: 700; letter-spacing: 0.1em;"
-                "background: transparent; border: none;"
+                f"color: {_DIM}; font-size: 9px; font-weight: 700; "
+                "letter-spacing: 0.1em; background: transparent; border: none;"
             )
             xp_layout.addWidget(lbl)
             inp = QLineEdit()
             inp.setPlaceholderText(placeholder)
             inp.setFixedHeight(48)
             inp.setStyleSheet(_INPUT_STYLE)
-            if attr == "_xtream_pass":
+            if is_password:
                 inp.setEchoMode(QLineEdit.EchoMode.Password)
-            setattr(self, attr, inp)
             xp_layout.addWidget(inp)
+            return inp
+
+        self._xtream_server = _add_xtream_field(
+            "SERVIDOR", "http://proveedor.com:8080"
+        )
+        self._xtream_user = _add_xtream_field("USUARIO", "tu_usuario")
+        self._xtream_pass = _add_xtream_field(
+            "CONTRASEÑA", "••••••••", is_password=True
+        )
 
         xp_layout.addStretch()
         self._stack.addWidget(xtream_page)
@@ -322,7 +330,8 @@ class ImportScreen(QWidget):
         import_btn.setFixedHeight(48)
         import_btn.setStyleSheet(
             f"background: {_ACCENT}; color: #060810; border: none;"
-            "padding: 0 24px; font-size: 12px; font-weight: 700; letter-spacing: 0.04em;"
+            "padding: 0 24px; font-size: 12px; font-weight: 700; "
+            "letter-spacing: 0.04em;"
         )
         import_btn.clicked.connect(self._trigger_import)
         btn_row.addStretch()

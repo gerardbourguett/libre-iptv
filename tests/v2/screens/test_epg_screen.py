@@ -1,7 +1,5 @@
 from __future__ import annotations
 
-import pytest
-
 from src.models.channel import Channel
 from src.v2.screens.epg_screen import EpgScreen
 

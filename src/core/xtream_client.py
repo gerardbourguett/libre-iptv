@@ -4,7 +4,7 @@ import json
 import urllib.parse
 import urllib.request
 from dataclasses import dataclass, field
-from typing import Any
+from typing import Any, cast
 
 _HEADERS = {
     "User-Agent": "LibreIPTV/1.0",
@@ -52,7 +52,7 @@ class XtreamClient:
         full_url = url + "?" + urllib.parse.urlencode(params)
         req = urllib.request.Request(full_url, headers=_HEADERS)
         with urllib.request.urlopen(req, timeout=self._timeout) as resp:
-            return resp.read()
+            return cast(bytes, resp.read())
 
     def _get_json(self, url: str, params: dict[str, str]) -> Any:
         return json.loads(self._get(url, params))
@@ -89,7 +89,11 @@ class XtreamClient:
         return list(result) if isinstance(result, list) else []
 
     def get_vod_info(self, vod_id: int | str) -> dict[str, Any]:
-        params = {**self._base_params(), "action": "get_vod_info", "vod_id": str(vod_id)}
+        params = {
+            **self._base_params(),
+            "action": "get_vod_info",
+            "vod_id": str(vod_id),
+        }
         result = self._get_json(self._api_url(), params)
         return dict(result) if isinstance(result, dict) else {}
 

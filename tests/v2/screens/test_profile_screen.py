@@ -20,7 +20,9 @@ class TestProfileScreenCreation:
         assert screen is not None
 
     def test_profile_count_matches(self, qtbot) -> None:
-        screen = ProfileScreen(profiles=[_profile("Alice"), _profile("Bob"), _profile("Carlos")])
+        screen = ProfileScreen(
+            profiles=[_profile("Alice"), _profile("Bob"), _profile("Carlos")]
+        )
         qtbot.addWidget(screen)
         assert screen.profile_count() == 3
 

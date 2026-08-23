@@ -4,8 +4,6 @@ import json
 import threading
 from pathlib import Path
 
-import pytest
-
 from src.core.settings import SettingsManager
 
 
@@ -77,7 +75,7 @@ class TestSettingsManagerPersistence:
         assert settings.get("player.volume") == 50
 
     def test_creates_file_on_init_if_missing(self, tmp_path: Path) -> None:
-        settings = SettingsManager(config_dir=tmp_path)
+        SettingsManager(config_dir=tmp_path)
         assert (tmp_path / "settings.json").exists()
         raw = json.loads((tmp_path / "settings.json").read_text(encoding="utf-8"))
         assert raw == {}

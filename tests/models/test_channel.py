@@ -82,7 +82,9 @@ class TestChannelContentFlags:
         assert ch.is_series is False
 
     def test_flags_can_be_set(self) -> None:
-        ch = Channel(url="http://x.com", name="X", is_live=False, is_vod=True, is_series=True)
+        ch = Channel(
+            url="http://x.com", name="X", is_live=False, is_vod=True, is_series=True
+        )
         assert ch.is_live is False
         assert ch.is_vod is True
         assert ch.is_series is True

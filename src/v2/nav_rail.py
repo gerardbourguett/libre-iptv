@@ -2,8 +2,8 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
-from PyQt6.QtCore import Qt, QEvent, pyqtSignal
-from PyQt6.QtGui import QMouseEvent, QEnterEvent
+from PyQt6.QtCore import QEvent, Qt, pyqtSignal
+from PyQt6.QtGui import QEnterEvent, QMouseEvent
 from PyQt6.QtWidgets import (
     QHBoxLayout,
     QLabel,
@@ -234,5 +234,7 @@ class NavRail(QWidget):
         col.addWidget(switch_lbl)
         row.addLayout(col)
 
-        w.mousePressEvent = lambda _: self.navigate_requested.emit("profiles")  # type: ignore[method-assign]
+        w.mousePressEvent = (  # type: ignore[method-assign]
+            lambda a0: self.navigate_requested.emit("profiles")
+        )
         return w

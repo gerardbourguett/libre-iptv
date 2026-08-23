@@ -346,7 +346,8 @@ class TestBlockedChannels:
             blocked_urls=frozenset(["http://cnn.com"]),
             blocked_groups=frozenset(),
         )
-        # item(0)=News header, item(1)=CNN, item(2)=BBC, item(3)=Sports header, item(4)=ESPN
+        # item(0)=News header, item(1)=CNN, item(2)=BBC,
+        # item(3)=Sports header, item(4)=ESPN
         cnn_item = widget.item(1)
         assert "🔒" in cnn_item.text()
 

@@ -41,7 +41,10 @@ class TestAccountInfo:
                 "allowed_output_formats": ["m3u8", "ts"],
             }
         }
-        with patch("urllib.request.urlopen", return_value=_urlopen(json.dumps(payload).encode())):
+        with patch(
+            "urllib.request.urlopen",
+            return_value=_urlopen(json.dumps(payload).encode()),
+        ):
             info = client.account_info()
         assert isinstance(info, AccountInfo)
         assert info.status == "Active"
@@ -50,20 +53,35 @@ class TestAccountInfo:
         assert info.allowed_output_formats == ["m3u8", "ts"]
 
     def test_trial_account(self, client: XtreamClient) -> None:
-        payload = {"user_info": {"status": "Active", "is_trial": "1", "max_connections": "1"}}
-        with patch("urllib.request.urlopen", return_value=_urlopen(json.dumps(payload).encode())):
+        payload = {
+            "user_info": {
+                "status": "Active",
+                "is_trial": "1",
+                "max_connections": "1",
+            }
+        }
+        with patch(
+            "urllib.request.urlopen",
+            return_value=_urlopen(json.dumps(payload).encode()),
+        ):
             info = client.account_info()
         assert info.is_trial
 
     def test_active_cons(self, client: XtreamClient) -> None:
         payload = {"user_info": {"active_cons": "3", "max_connections": "5"}}
-        with patch("urllib.request.urlopen", return_value=_urlopen(json.dumps(payload).encode())):
+        with patch(
+            "urllib.request.urlopen",
+            return_value=_urlopen(json.dumps(payload).encode()),
+        ):
             info = client.account_info()
         assert info.active_cons == 3
 
     def test_username_in_result(self, client: XtreamClient) -> None:
         payload: dict = {"user_info": {}}
-        with patch("urllib.request.urlopen", return_value=_urlopen(json.dumps(payload).encode())):
+        with patch(
+            "urllib.request.urlopen",
+            return_value=_urlopen(json.dumps(payload).encode()),
+        ):
             info = client.account_info()
         assert info.username == "testuser"
         assert info.password == "testpass"
@@ -72,7 +90,10 @@ class TestAccountInfo:
 class TestGetM3uPlus:
     def test_returns_m3u_text(self, client: XtreamClient) -> None:
         m3u = "#EXTM3U\n#EXTINF:-1,Channel\nhttp://stream.m3u8"
-        with patch("urllib.request.urlopen", return_value=_urlopen(m3u.encode())):
+        with patch(
+            "urllib.request.urlopen",
+            return_value=_urlopen(m3u.encode()),
+        ):
             result = client.get_m3u_plus()
         assert result == m3u
 
@@ -92,7 +113,10 @@ class TestGetM3uPlus:
 class TestGetXmltv:
     def test_returns_bytes(self, client: XtreamClient) -> None:
         content = b"<?xml version='1.0'?><tv></tv>"
-        with patch("urllib.request.urlopen", return_value=_urlopen(content)):
+        with patch(
+            "urllib.request.urlopen",
+            return_value=_urlopen(content),
+        ):
             result = client.get_xmltv()
         assert result == content
 
@@ -106,7 +130,10 @@ class TestGetXmltv:
 class TestGetLiveCategories:
     def test_returns_list(self, client: XtreamClient) -> None:
         cats = [{"category_id": "1", "category_name": "Sports"}]
-        with patch("urllib.request.urlopen", return_value=_urlopen(json.dumps(cats).encode())):
+        with patch(
+            "urllib.request.urlopen",
+            return_value=_urlopen(json.dumps(cats).encode()),
+        ):
             result = client.get_live_categories()
         assert result == cats
 
@@ -117,7 +144,10 @@ class TestGetLiveCategories:
         assert "action=get_live_categories" in req.full_url
 
     def test_empty_response(self, client: XtreamClient) -> None:
-        with patch("urllib.request.urlopen", return_value=_urlopen(b"[]")):
+        with patch(
+            "urllib.request.urlopen",
+            return_value=_urlopen(b"[]"),
+        ):
             result = client.get_live_categories()
         assert result == []
 
@@ -125,7 +155,10 @@ class TestGetLiveCategories:
 class TestGetVodCategories:
     def test_returns_list(self, client: XtreamClient) -> None:
         cats = [{"category_id": "2", "category_name": "Movies"}]
-        with patch("urllib.request.urlopen", return_value=_urlopen(json.dumps(cats).encode())):
+        with patch(
+            "urllib.request.urlopen",
+            return_value=_urlopen(json.dumps(cats).encode()),
+        ):
             result = client.get_vod_categories()
         assert result == cats
 
@@ -139,7 +172,10 @@ class TestGetVodCategories:
 class TestGetVodInfo:
     def test_returns_dict(self, client: XtreamClient) -> None:
         info = {"info": {"name": "Movie A", "year": "2023"}, "movie_data": {}}
-        with patch("urllib.request.urlopen", return_value=_urlopen(json.dumps(info).encode())):
+        with patch(
+            "urllib.request.urlopen",
+            return_value=_urlopen(json.dumps(info).encode()),
+        ):
             result = client.get_vod_info(42)
         assert result == info
 
