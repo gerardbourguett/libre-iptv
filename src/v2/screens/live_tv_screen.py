@@ -111,20 +111,32 @@ class LiveTvScreen(QWidget):
         if self._channels:
             self._select_channel(0)
 
-    def _make_item(self, ch: Channel) -> QListWidgetItem:
+    def _item_text(self, ch: Channel) -> str:
         epg = self._epg_data.get(ch.tvg_id) if ch.tvg_id else None
         if epg and epg.get("now_title"):
             start = epg.get("start", "")
             end = epg.get("end", "")
-            text = (
+            return (
                 f"{ch.name}\n▶ {epg['now_title']}  "
                 f"({start}–{end})"
             )
-        else:
-            text = f"{ch.name}\nSin información"
-        item = QListWidgetItem(text)
+        return f"{ch.name}\nSin información"
+
+    def _make_item(self, ch: Channel) -> QListWidgetItem:
+        item = QListWidgetItem(self._item_text(ch))
         item.setData(Qt.ItemDataRole.UserRole, ch)
         return item
+
+    def update_epg_data(self, epg_data: dict[str, dict[str, Any]]) -> None:
+        """Refresh EPG now/next text in place, without touching selection/playback."""
+        self._epg_data = epg_data
+        for i in range(self._channel_list.count()):
+            item = self._channel_list.item(i)
+            if item is None:
+                continue
+            ch = item.data(Qt.ItemDataRole.UserRole)
+            if isinstance(ch, Channel):
+                item.setText(self._item_text(ch))
 
     def _on_item_clicked(self, item: QListWidgetItem) -> None:
         ch = item.data(Qt.ItemDataRole.UserRole)

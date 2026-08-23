@@ -51,3 +51,32 @@ class TestEpgSublabel:
         qtbot.addWidget(screen)
         item = screen._channel_list.item(0)
         assert "Breaking" in item.text()
+
+
+class TestUpdateEpgData:
+    def test_refreshes_text_without_resetting_selection_or_playback(
+        self, qtbot, monkeypatch
+    ):
+        channels = [
+            Channel(url="http://a.com", name="CNN", tvg_id="cnn"),
+            Channel(url="http://b.com", name="BBC", tvg_id="bbc"),
+        ]
+        screen = LiveTvScreen(channels, epg_data={})
+        qtbot.addWidget(screen)
+
+        screen._select_channel(1)
+        assert screen._current_index == 1
+
+        play_calls = []
+        monkeypatch.setattr(
+            screen, "_play_channel", lambda ch: play_calls.append(ch)
+        )
+
+        screen.update_epg_data(
+            {"bbc": {"now_title": "News", "start": "09:00", "end": "10:00"}}
+        )
+
+        assert screen._current_index == 1
+        assert play_calls == []
+        item = screen._channel_list.item(1)
+        assert "News" in item.text()

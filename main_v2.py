@@ -1,6 +1,8 @@
 from __future__ import annotations
 
+import logging
 import sys
+from datetime import datetime
 
 from PyQt6.QtCore import QEvent, QObject, Qt
 from PyQt6.QtGui import QKeyEvent
@@ -9,6 +11,7 @@ from PyQt6.QtWidgets import QApplication, QDialog, QHBoxLayout, QMainWindow, QWi
 from src.i18n import init_translator
 from src.models.channel import Channel
 from src.profiles.manager import ProfileManager
+from src.services.epg_service import EpgService
 from src.services.playlist_service import PlaylistService
 from src.v2.dialogs.playlist_dialog import PlaylistDialog
 from src.v2.nav_rail import NavRail
@@ -22,6 +25,34 @@ from src.v2.screens.search_screen import SearchScreen
 from src.v2.screens.settings_screen import SettingsScreen
 from src.v2.screens.vod_screen import VodScreen
 from src.v2.themes import Theme, apply_theme
+
+
+def _format_epg_time(raw: str) -> str:
+    """Format an XMLTV timestamp like '20260101000000 +0000' into 'HH:MM'."""
+    try:
+        dt = datetime.strptime(raw.split(" ")[0], "%Y%m%d%H%M%S")
+        return dt.strftime("%H:%M")
+    except Exception:
+        return ""
+
+
+def _build_live_epg_data(
+    channels: list[Channel], epg_service: EpgService
+) -> dict[str, dict[str, str]]:
+    """Build the now-playing EPG map consumed by LiveTvScreen.load_channels."""
+    data: dict[str, dict[str, str]] = {}
+    for ch in channels:
+        if not ch.tvg_id:
+            continue
+        now, _nxt = epg_service.get_now_next(ch.tvg_id)
+        if now is None:
+            continue
+        data[ch.tvg_id] = {
+            "now_title": now.title,
+            "start": _format_epg_time(now.start),
+            "end": _format_epg_time(now.stop),
+        }
+    return data
 
 
 def main() -> None:
@@ -74,9 +105,15 @@ def main() -> None:
     home.channel_clicked.connect(on_home_channel_clicked)
 
     channels: list[Channel] = []
-    live = LiveTvScreen(channels)
+    epg_service = EpgService()
+
+    def _on_epg_error(message: str) -> None:
+        logging.getLogger(__name__).warning("EPG error: %s", message)
+
+    epg_service.epg_error.connect(_on_epg_error)
+    live = LiveTvScreen(channels, epg_service=epg_service)
     vod = VodScreen()
-    epg = EpgScreen()
+    epg = EpgScreen(epg_service=epg_service)
     search = SearchScreen()
     settings = SettingsScreen()
     import_screen = ImportScreen()
@@ -118,16 +155,26 @@ def main() -> None:
     playlist_service = PlaylistService()
 
     def _on_channels_loaded(loaded: list[Channel]) -> None:
+        nonlocal channels
+        channels = loaded
         home.populate(loaded, profile)
-        live.load_channels(loaded)
+        live.load_channels(loaded, epg_data=_build_live_epg_data(loaded, epg_service))
         vod.load_channels(loaded)
         epg.load_channels(loaded)
         search.load_channels(loaded)
+
+    def _on_epg_ready() -> None:
+        epg.load_channels(channels)
+        live.update_epg_data(_build_live_epg_data(channels, epg_service))
+
+    epg_service.epg_ready.connect(_on_epg_ready)
 
     playlist_service.channels_loaded.connect(_on_channels_loaded)
     if profile and (profile.playlist_url or profile.playlist_path):
         home.set_loading(True)
         playlist_service.load_profile(profile)
+    if profile and profile.epg_url:
+        epg_service.start(profile.epg_url)
 
     # Handler: user clicked "Configurar lista M3U" in the empty state
     def _on_load_playlist_requested() -> None:
